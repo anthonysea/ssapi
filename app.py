@@ -19,6 +19,7 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 
 app = Flask(__name__)
+app.config.from_pyfile('config.py')
 app.config['MYSQL_DATABASE_USER'] = config.user
 app.config['MYSQL_DATABASE_PASSWORD'] = config.password
 app.config['MYSQL_DATABASE_DB'] = config.database
@@ -134,4 +135,4 @@ def unauthorized(error):
 		
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True,host='0.0.0.0')

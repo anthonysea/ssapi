@@ -13,6 +13,9 @@ from flaskext.mysql import MySQL
 import json
 import sys
 
+
+import sys, os
+sys.path.append('/var/www/ssapi')
 import config
 
 reload(sys)

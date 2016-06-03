@@ -6,6 +6,8 @@ from flask import Flask, request, render_template, jsonify,abort, make_response
 #http://flask.pocoo.org/snippets/9/
 from werkzeug.contrib.cache import SimpleCache
 
+import collections
+
 #database connect
 from flaskext.mysql import MySQL
 import json
@@ -44,6 +46,11 @@ class cached(object):
         return decorator
 
 
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
 @app.route('/api/v1.0/<int:api_key>/release/<int:release_id>',methods=['GET'])
 @cached()
 def get_release(api_key,release_id):
@@ -79,8 +86,34 @@ def get_release(api_key,release_id):
 		genre = str(row[8])
 		date = str(row[9])
 
-		final_data = {'release_id':release_id,'artists':all_artists,'title':title,'label':label,'genre':genre,'date':date}
+		release_data = {'release_id':release_id,'artists':all_artists,'title':title,'label':label,'genre':genre,'date':date}
 
+	#get savers
+	#####pass release_id into query to get release details	
+	cursor = mysql.connect().cursor()
+	try:
+		results = cursor.execute("SELECT artist from charts_extended where release_id='" + release_id + "'")
+	except Exception as e:
+		return "Failed to run db query: " + str(e)
+
+	numrows = int(cursor.rowcount)
+
+	if numrows==0:
+		return "No record found"
+
+	saver_data = []
+	for x in range(0,numrows):
+		row = cursor.fetchone()
+		user = str(row[0])
+		d = collections.OrderedDict()
+		d['user'] = user
+		saver_data.append(d)
+		
+	print saver_data
+
+	
+
+	final_data = {'details':release_data,'savers':saver_data}
 	resp = jsonify(results=final_data)
 	return resp
 
@@ -99,4 +132,4 @@ def unauthorized(error):
 		
 
 if __name__ == '__main__':
-    app.run(debug=False,host='0.0.0.0')
+    app.run(debug=True,host='0.0.0.0')

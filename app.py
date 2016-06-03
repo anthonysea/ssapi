@@ -101,6 +101,8 @@ def get_release(api_key,release_id):
 	if numrows==0:
 		return "No record found"
 
+
+	##get list of users who saved this release
 	saver_data = []
 	for x in range(0,numrows):
 		row = cursor.fetchone()
@@ -132,4 +134,4 @@ def unauthorized(error):
 		
 
 if __name__ == '__main__':
-    app.run(debug=True,host='0.0.0.0')
+    app.run(debug=False,host='0.0.0.0')

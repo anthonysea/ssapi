@@ -9,7 +9,7 @@ __Get all Releases by an Artist__
 
 __Get all Releases on a Label__
 
-`tbc`
+`http://api.soundshelter.net/api/v1.0/<api_key>/label/<label>`
 
 __Get details about a specific release__
 

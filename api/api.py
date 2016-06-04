@@ -77,7 +77,7 @@ def get_artist(api_key,artist):
 
 	cursor = mysql.connect().cursor()
 	try:
-		results = cursor.execute("SELECT release_id from release_artists where artists='" + artist + "'")
+		results = cursor.execute("SELECT releases.* from releases INNER JOIN release_artists ON releases.id=release_artists.release_id where release_artists.artists='" + artist + "' GROUP BY releases.id ORDER BY releases.date DESC")
 	except Exception as e:
 		return "Failed to run db query: " + str(e)
 
@@ -92,12 +92,13 @@ def get_artist(api_key,artist):
 		release_id = str(row[0])
 		d = collections.OrderedDict()
 		d['release_id'] = release_id
+		d['all_artists'] = str(row[2])
+		d['title'] = str(row[4])
+		d['label'] = str(row[6])
+		d['genre'] = str(row[8])
+		d['date'] = str(row[9])
 		id_data.append(d)
 		
-	print id_data
-
-	
-
 	final_data = {'releases':id_data}
 	resp = jsonify(results=final_data)
 	return resp

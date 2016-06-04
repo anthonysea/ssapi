@@ -16,6 +16,10 @@ import sys
 
 import sys, os
 sys.path.append('/var/www/ssapi')
+
+sys.path.append('/var/www/ssapi/api')
+
+
 import config
 
 reload(sys)

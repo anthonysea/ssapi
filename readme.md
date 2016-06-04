@@ -10,4 +10,4 @@ All Releases on a label call
 
 All Releases by an artist call
 
-`tbc`
+`/api/v1.0/<api_key>/artist/<artist>`

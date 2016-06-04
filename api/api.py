@@ -149,7 +149,7 @@ def get_release(api_key,release_id):
 	#####pass release_id into query to get release details	
 	cursor = mysql.connect().cursor()
 	try:
-		results = cursor.execute("SELECT artist from charts_extended where release_id='" + release_id + "'")
+		results = cursor.execute("SELECT artist from charts_extended where artist!= 'Sound Shelter' AND release_id='" + release_id + "'")
 	except Exception as e:
 		return "Failed to run db query: " + str(e)
 

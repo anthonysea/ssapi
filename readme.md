@@ -3,11 +3,11 @@
 ####email info@soundshelter.net for API key
 
 
-__All Releases by an Artist__
+__Get all Releases by an Artist__
 
 `http://api.soundshelter.net/api/v1.0/<api_key>/artist/<artist>`
 
-__Get All Releases on a Label__
+__Get all Releases on a Label__
 
 `tbc`
 

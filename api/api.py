@@ -104,7 +104,43 @@ def get_artist(api_key,artist):
 	return resp
 
 
+#######get all releases on a label
+@app.route('/api/v1.0/<int:api_key>/label/<string:label>',methods=['GET'])
+@cache.cached(timeout=50)
+def get_label(api_key,label):
+	if str(api_key)!='2844':
+		abort(401)
+	label = str(label)
+	if len(label) ==0:
+		abort(404)
 
+	cursor = mysql.connect().cursor()
+	try:
+		results = cursor.execute("SELECT releases.* from releases where releases.label_no_country='" + label + "' GROUP BY releases.id ORDER BY releases.date DESC")
+	except Exception as e:
+		return "Failed to run db query: " + str(e)
+
+	numrows = int(cursor.rowcount)
+
+	if numrows==0:
+		return "No record found"
+
+	id_data = []
+	for x in range(0,numrows):
+		row = cursor.fetchone()
+		release_id = str(row[0])
+		d = collections.OrderedDict()
+		d['release_id'] = release_id
+		d['all_artists'] = str(row[2])
+		d['title'] = str(row[4])
+		d['label'] = str(row[6])
+		d['genre'] = str(row[8])
+		d['date'] = str(row[9])
+		id_data.append(d)
+		
+	final_data = {'releases':id_data}
+	resp = jsonify(results=final_data)
+	return resp
 
 
 

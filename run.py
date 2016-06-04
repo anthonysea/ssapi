@@ -1,4 +1,9 @@
-#!flask/bin/python
-from api import app
+import os
+import sys
+from api.api import app
 
-app.run(debug=True)
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, PROJECT_DIR)
+
+if __name__ == '__main__':
+    app.run(debug=True)

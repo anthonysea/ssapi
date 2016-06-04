@@ -2,9 +2,9 @@
 import sys
 sys.path.append("/var/www/ssapi/api")
 from flask import Flask, request, render_template, jsonify,abort, make_response
+from flask.ext.cache import Cache
 
-#http://flask.pocoo.org/snippets/9/
-from werkzeug.contrib.cache import SimpleCache
+
 
 import collections
 
@@ -18,15 +18,19 @@ import sys, os
 sys.path.append('/var/www/ssapi')
 
 sys.path.append('/var/www/ssapi/api')
-
-
 import config
+
+#https://pythonhosted.org/Flask-Cache/
+
+
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
 app = Flask(__name__)
 app.config.from_object('config')
+cache = Cache(app,config={'CACHE_TYPE': 'simple'})
+
 
 app.config['MYSQL_DATABASE_USER'] = config.user
 app.config['MYSQL_DATABASE_PASSWORD'] = config.password
@@ -37,23 +41,23 @@ app.config['MYSQL_DATABASE_HOST'] = config.host
 mysql = MySQL()
 mysql.init_app(app)
 
-#http://flask.pocoo.org/snippets/9/
-CACHE_TIMEOUT = 300
-cache = SimpleCache()
-class cached(object):
+##############http://flask.pocoo.org/snippets/9/
+#from werkzeug.contrib.cache import SimpleCache
+# CACHE_TIMEOUT = 300
+# cache = SimpleCache()
+# class cached(object):
 
-    def __init__(self, timeout=None):
-        self.timeout = timeout or CACHE_TIMEOUT
+#     def __init__(self, timeout=None):
+#         self.timeout = timeout or CACHE_TIMEOUT
 
-    def __call__(self, f):
-        def decorator(*args, **kwargs):
-            response = cache.get(request.path)
-            if response is None:
-                response = f(*args, **kwargs)
-                cache.set(request.path, response, self.timeout)
-            return response
-        return decorator
-
+#     def __call__(self, f):
+#         def decorator(*args, **kwargs):
+#             response = cache.get(request.path)
+#             if response is None:
+#                 response = f(*args, **kwargs)
+#                 cache.set(request.path, response, self.timeout)
+#             return response
+#         return decorator
 
 @app.route('/')
 @app.route('/index/')
@@ -61,8 +65,51 @@ def index():
     return render_template('index.html')
 
 
+#########get all releases by an artist
+@app.route('/api/v1.0/<int:api_key>/artist/<string:artist>',methods=['GET'])
+@cache.cached(timeout=50)
+def get_artist(api_key,artist):
+	if str(api_key)!='2844':
+		abort(401)
+	artist = str(artist)
+	if len(artist) ==0:
+		abort(404)
+
+	cursor = mysql.connect().cursor()
+	try:
+		results = cursor.execute("SELECT release_id from release_artists where artists='" + artist + "'")
+	except Exception as e:
+		return "Failed to run db query: " + str(e)
+
+	numrows = int(cursor.rowcount)
+
+	if numrows==0:
+		return "No record found"
+
+	id_data = []
+	for x in range(0,numrows):
+		row = cursor.fetchone()
+		release_id = str(row[0])
+		d = collections.OrderedDict()
+		d['release_id'] = release_id
+		id_data.append(d)
+		
+	print id_data
+
+	
+
+	final_data = {'releases':id_data}
+	resp = jsonify(results=final_data)
+	return resp
+
+
+
+
+
+
+#########get a release
 @app.route('/api/v1.0/<int:api_key>/release/<int:release_id>',methods=['GET'])
-@cached()
+@cache.cached(timeout=50)
 def get_release(api_key,release_id):
 	
 	if str(api_key) !='2844':

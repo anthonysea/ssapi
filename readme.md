@@ -1,8 +1,9 @@
-API for soundshelter.net
+API for https://www.soundshelter.net
+email info@soundshelter.net for API key
 
 Release Call
 
-`/api/v1.0/<api_key>/release/<release_id>`
+`http://api.soundshelter.net/api/v1.0/<api_key>/release/<release_id>`
 
 All Releases on a label call
 
@@ -10,4 +11,4 @@ All Releases on a label call
 
 All Releases by an artist call
 
-`/api/v1.0/<api_key>/artist/<artist>`
+`http://api.soundshelter.net/api/v1.0/<api_key>/artist/<artist>`

@@ -7,5 +7,5 @@ logging.basicConfig(stream=sys.stderr)
 sys.path.insert(0,"/var/www/ssapi")
 sys.path.insert(0,"/var/www/ssapi/api")
 
-from app import app as application
+from api.api import app as application
 application.secret_key = 'Add your secret key'

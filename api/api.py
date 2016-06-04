@@ -1,4 +1,6 @@
 #!flask/bin/python
+import sys
+sys.path.append("/var/www/ssapi/api")
 from flask import Flask, request, render_template, jsonify,abort, make_response
 
 #http://flask.pocoo.org/snippets/9/

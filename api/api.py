@@ -72,7 +72,8 @@ def index():
 def get_recommendations(api_key,user):
 	if str(api_key)!=the_api_key:
 		abort(401)
-	return 'coming soon'
+	user = str(user)
+	return 'coming soon for ' + user
 
 
 #########get all releases by an artist

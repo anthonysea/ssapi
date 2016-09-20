@@ -5,12 +5,16 @@
 
 __Get all Releases by an Artist__
 
-`http://api.soundshelter.net/api/v1.0/<api_key>/artist/<artist>`
+`https://api.soundshelter.net/api/v1.0/<api_key>/artist/<artist>`
 
 __Get all Releases on a Label__
 
-`http://api.soundshelter.net/api/v1.0/<api_key>/label/<label>`
+`https://api.soundshelter.net/api/v1.0/<api_key>/label/<label>`
 
 __Get details about a specific release__
 
-`http://api.soundshelter.net/api/v1.0/<api_key>/release/<release_id>`
+`https://api.soundshelter.net/api/v1.0/<api_key>/release/<release_id>`
+
+__Get a users personalised recommendations__
+
+`https://api.soundshelter.net/api/v1.0/<api_key>/user/<user_name>/recommendations`

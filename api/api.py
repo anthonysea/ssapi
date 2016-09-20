@@ -36,6 +36,7 @@ app.config['MYSQL_DATABASE_USER'] = config.user
 app.config['MYSQL_DATABASE_PASSWORD'] = config.password
 app.config['MYSQL_DATABASE_DB'] = config.database
 app.config['MYSQL_DATABASE_HOST'] = config.host
+the_api_key = config.api_key
 
 
 mysql = MySQL()
@@ -65,11 +66,20 @@ def index():
     return render_template('index.html')
 
 
+#########get a users personalised recommendations
+@app.route('/api/v1.0/<int:api_key>/user/<string:user>/recommendations',methods=['GET'])
+@cache.cached(timeout=50)
+def get_recommendations(api_key,user):
+	if str(api_key)!=the_api_key:
+		abort(401)
+	return 'coming soon'
+
+
 #########get all releases by an artist
 @app.route('/api/v1.0/<int:api_key>/artist/<string:artist>',methods=['GET'])
 @cache.cached(timeout=50)
 def get_artist(api_key,artist):
-	if str(api_key)!='2844':
+	if str(api_key)!=the_api_key:
 		abort(401)
 	artist = str(artist)
 	if len(artist) ==0:
@@ -99,6 +109,7 @@ def get_artist(api_key,artist):
 		d['date'] = str(row[9])
 		d['small_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-MED.jpg'
 		d['big_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-BIG.jpg'
+		d['api_release_id'] = 'https://api.soundshelter.net/api/v1.0/<api_key>/release/' + release_id
 		id_data.append(d)
 		
 	final_data = {'releases':id_data}
@@ -110,7 +121,7 @@ def get_artist(api_key,artist):
 @app.route('/api/v1.0/<int:api_key>/label/<string:label>',methods=['GET'])
 @cache.cached(timeout=50)
 def get_label(api_key,label):
-	if str(api_key)!='2844':
+	if str(api_key)!=the_api_key:
 		abort(401)
 	label = str(label)
 	if len(label) ==0:
@@ -140,6 +151,7 @@ def get_label(api_key,label):
 		d['date'] = str(row[9])
 		d['small_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-MED.jpg'
 		d['big_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-BIG.jpg'
+		d['api_release_id'] = 'https://api.soundshelter.net/api/v1.0/<api_key>/release/' + release_id
 		id_data.append(d)
 		
 	final_data = {'releases':id_data}
@@ -153,7 +165,7 @@ def get_label(api_key,label):
 @cache.cached(timeout=50)
 def get_release(api_key,release_id):
 	
-	if str(api_key) !='2844':
+	if str(api_key) !=the_api_key:
 		abort(401)
 	release_id = str(release_id) #convert to string
 	####check that we recieved a release_id
@@ -209,6 +221,7 @@ def get_release(api_key,release_id):
 		user = str(row[0])
 		d = collections.OrderedDict()
 		d['user'] = user
+		d['user_url'] = 'https://api.soundshelter.net/api/v1.0/<api_key>/user/' + user + '/recommendations'
 		saver_data.append(d)
 		
 	print saver_data

@@ -110,7 +110,7 @@ def get_artist(api_key,artist):
 		d['date'] = str(row[9])
 		d['small_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-MED.jpg'
 		d['big_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-BIG.jpg'
-		d['api_release_id'] = 'https://api.soundshelter.net/api/v1.0/<api_key>/release/' + release_id
+		d['api_release_id'] = 'https://api.soundshelter.net/api/v1.0/' + api_key + '/release/' + release_id
 		id_data.append(d)
 		
 	final_data = {'releases':id_data}

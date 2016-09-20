@@ -68,7 +68,6 @@ def index():
 
 #########get a users personalised recommendations
 @app.route('/api/v1.0/<int:api_key>/user/<string:user>/recommendations',methods=['GET'])
-@cache.cached(timeout=50)
 def get_recommendations(api_key,user):
 	if str(api_key)!=the_api_key:
 		abort(401)
@@ -185,7 +184,7 @@ def get_release(api_key,release_id):
 	numrows = int(cursor.rowcount)
 
 	if numrows==0:
-		return "No record found"
+		return "No record found for " + str(release_id)
 
 	for x in range(0,numrows):
 		row = cursor.fetchone()
@@ -222,7 +221,7 @@ def get_release(api_key,release_id):
 		user = str(row[0])
 		d = collections.OrderedDict()
 		d['user'] = user
-		d['user_url'] = 'https://api.soundshelter.net/api/v1.0/<api_key>/user/' + user + '/recommendations'
+		d['user_url'] = 'https://api.soundshelter.net/api/v1.0/' + str(api_key) + '/user/' + user + '/recommendations'
 		saver_data.append(d)
 		
 	print saver_data

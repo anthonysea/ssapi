@@ -110,7 +110,7 @@ def get_artist(api_key,artist):
 		d['date'] = str(row[9])
 		d['small_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-MED.jpg'
 		d['big_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-BIG.jpg'
-		d['api_release_id'] = 'https://api.soundshelter.net/api/v1.0/' + api_key + '/release/' + release_id
+		d['api_release_id'] = 'https://api.soundshelter.net/api/v1.0/' + str(api_key) + '/release/' + release_id
 		id_data.append(d)
 		
 	final_data = {'releases':id_data}
@@ -152,7 +152,7 @@ def get_label(api_key,label):
 		d['date'] = str(row[9])
 		d['small_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-MED.jpg'
 		d['big_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-BIG.jpg'
-		d['api_release_id'] = 'https://api.soundshelter.net/api/v1.0/<api_key>/release/' + release_id
+		d['api_release_id'] = 'https://api.soundshelter.net/api/v1.0/' + str(api_key) + '/release/' + release_id
 		id_data.append(d)
 		
 	final_data = {'releases':id_data}
@@ -238,7 +238,7 @@ def get_release(api_key,release_id):
 
 @app.errorhandler(404)
 def not_found(error):
-    return make_response(jsonify({'error': 'Not found'}), 404)	
+    return make_response(jsonify({'error': 'That an invalid method - check https://api.soundshelter.net for a list of valid methods'}), 404)	
 
 
 

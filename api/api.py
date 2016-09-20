@@ -97,6 +97,8 @@ def get_artist(api_key,artist):
 		d['label'] = str(row[6])
 		d['genre'] = str(row[8])
 		d['date'] = str(row[9])
+		d['small_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-MED.jpg'
+		d['big_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-BIG.jpg'
 		id_data.append(d)
 		
 	final_data = {'releases':id_data}
@@ -136,6 +138,8 @@ def get_label(api_key,label):
 		d['label'] = str(row[6])
 		d['genre'] = str(row[8])
 		d['date'] = str(row[9])
+		d['small_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-MED.jpg'
+		d['big_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-BIG.jpg'
 		id_data.append(d)
 		
 	final_data = {'releases':id_data}
@@ -179,8 +183,10 @@ def get_release(api_key,release_id):
 		label = str(row[6])
 		genre = str(row[8])
 		date = str(row[9])
+		small_img = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-MED.jpg'
+		big_img = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-BIG.jpg'
 
-		release_data = {'release_id':release_id,'artists':all_artists,'title':title,'label':label,'genre':genre,'date':date}
+		release_data = {'release_id':release_id,'artists':all_artists,'title':title,'label':label,'genre':genre,'date':date,'small_img':small_img,'big_img':big_img}
 
 	#get savers
 	#####pass release_id into query to get release details	

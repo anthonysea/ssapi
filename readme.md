@@ -18,3 +18,7 @@ __Get details about a specific release__
 __Get a users personalised recommendations__
 
 `https://api.soundshelter.net/api/v1.0/<api_key>/user/<user_name>/recommendations`
+
+__Update a users personalised recommendations__
+
+`https://api.soundshelter.net/api/v1.0/<api_key>/user/<user_name>/updateRecommendations`

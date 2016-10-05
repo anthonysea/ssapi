@@ -265,9 +265,10 @@ def update_recommendations(api_key,user):
 
 	sql = """SELECT artist,sum(cnt) as cnt FROM
 (SELECT DISTINCT similar.similar_artist as artist,COUNT(similar.similar_artist) as cnt FROM release_artists INNER JOIN charts_extended ON charts_extended.release_id=release_artists.release_id INNER JOIN similar ON release_artists.artists=similar.artist INNER JOIN users ON users.name=charts_extended.artist WHERE users.name=%s GROUP BY similar.similar_artist HAVING COUNT(similar.similar_artist) > 0 UNION all
-SELECT DISTINCT release_artists.artists as artist ,COUNT(release_artists.artists) * 20 as cnt FROM release_artists INNER JOIN charts_extended ce ON ce.release_id=release_artists.release_id WHERE ce.artist=%s GROUP by release_artists.artists HAVING COUNT(release_artists.artists) > 0
+SELECT DISTINCT release_artists.artists as artist ,(1000-datediff(now(),FROM_UNIXTIME(max(ce.date))))/100 + COUNT(release_artists.artists) * 20 as cnt FROM release_artists INNER JOIN charts_extended ce ON ce.release_id=release_artists.release_id 
+WHERE ce.artist=%s GROUP by release_artists.artists HAVING COUNT(release_artists.artists) > 0
 UNION all
-SELECT artist_love.artist as artist,"40" as cnt FROM artist_love WHERE artist_love.user=%s
+SELECT artist_love.artist as artist,"100" as cnt FROM artist_love WHERE artist_love.user=%s
 UNION all
 SELECT artists_user_has_recd.artist,count FROM artists_user_has_recd WHERE user=%s
 ) as final

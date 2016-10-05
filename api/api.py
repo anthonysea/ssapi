@@ -262,9 +262,18 @@ def update_recommendations(api_key,user):
 		abort(401)
 	userName = str(user)
 	start_time = time.time() 
+
+	sql = """SELECT artist,sum(cnt) as cnt FROM
+(SELECT DISTINCT similar.similar_artist as artist,COUNT(similar.similar_artist) as cnt FROM release_artists INNER JOIN charts_extended ON charts_extended.release_id=release_artists.release_id INNER JOIN similar ON release_artists.artists=similar.artist INNER JOIN users ON users.name=charts_extended.artist WHERE users.name=%s GROUP BY similar.similar_artist HAVING COUNT(similar.similar_artist) > 0 UNION all
+SELECT DISTINCT release_artists.artists as artist ,COUNT(release_artists.artists) as cnt FROM release_artists INNER JOIN charts_extended ce ON ce.release_id=release_artists.release_id WHERE ce.artist=%s GROUP by release_artists.artists HAVING COUNT(release_artists.artists) > 0
+UNION all
+SELECT artist_love.artist as artist,"20" as cnt FROM artist_love WHERE artist_love.user=%s
+) as final
+GROUP by artist
+ORDER BY cnt DESC"""
  
 	#get the similar artists that appear more than once
-	getRecs = db_select("SELECT DISTINCT similar.similar_artist,COUNT(similar.similar_artist) as cnt FROM release_artists INNER JOIN charts_extended ON charts_extended.release_id=release_artists.release_id INNER JOIN similar ON release_artists.artists=similar.artist INNER JOIN users ON users.name=charts_extended.artist WHERE users.name=%s GROUP BY similar.similar_artist HAVING COUNT(similar.similar_artist) > 0 UNION SELECT DISTINCT release_artists.artists ,COUNT(release_artists.artists) as cnt FROM release_artists INNER JOIN charts_extended ce ON ce.release_id=release_artists.release_id WHERE ce.artist=%s GROUP by release_artists.artists HAVING COUNT(release_artists.artists) > 0 ORDER BY cnt DESC",(userName,userName,))
+	getRecs = db_select(sql,(userName,userName,userName))
 
 	dataArtists = getRecs.fetchall()
 	for artistRow in dataArtists:
@@ -275,7 +284,7 @@ def update_recommendations(api_key,user):
 		key = hashlib.md5(userName + artist).hexdigest()
 		
 		#now insert this into the artists_user_has_recd
-		insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=count + %s",(userName,artist,key,count,count))
+		insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
 		#print "inserted " + artist + " for " + userName
 
 	#now we find releases that are by those artists

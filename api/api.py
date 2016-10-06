@@ -269,6 +269,9 @@ SELECT DISTINCT release_artists.artists as artist ,(1000-datediff(now(),FROM_UNI
 WHERE ce.artist=%s GROUP by release_artists.artists HAVING COUNT(release_artists.artists) > 0
 UNION all
 SELECT artist_love.artist as artist,"100" as cnt FROM artist_love WHERE artist_love.user=%s
+UNION all
+SELECT `auhr`.artist, auhr.count
+FROM artists_user_has_recd auhr WHERE auhr.user=%s AND count='20'
 ) as final
 GROUP by artist
 ORDER BY cnt DESC"""

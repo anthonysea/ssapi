@@ -261,6 +261,7 @@ def update_recommendations(api_key,user):
 	if str(api_key)!=the_api_key:
 		abort(401)
 	userName = str(user)
+
 	start_time = time.time() 
 
 	sql = """SELECT artist,sum(cnt) as cnt FROM
@@ -339,7 +340,7 @@ ORDER BY cnt DESC"""
 
 
 	#display time taken to run script
-	return("--- %s seconds ---" % (time.time() - start_time))
+	return("--- %s seconds ---" % (time.time() - start_time) + ' for ' + userName)
 
 
 

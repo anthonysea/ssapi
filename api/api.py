@@ -277,7 +277,7 @@ GROUP by artist
 ORDER BY cnt DESC"""
  
 	#get the similar artists that appear more than once
-	getRecs = db_select(sql,(userName,userName,userName))
+	getRecs = db_select(sql,(userName,userName,userName,userName))
 
 	dataArtists = getRecs.fetchall()
 	for artistRow in dataArtists:

@@ -266,14 +266,24 @@ def update_recommendations(api_key,user):
 
 	sql = """SELECT artist,sum(cnt) as cnt FROM
 (SELECT DISTINCT similar.similar_artist as artist,COUNT(similar.similar_artist) as cnt FROM release_artists INNER JOIN charts_extended ON charts_extended.release_id=release_artists.release_id INNER JOIN similar ON release_artists.artists=similar.artist INNER JOIN users ON users.name=charts_extended.artist WHERE users.name=%s GROUP BY similar.similar_artist HAVING COUNT(similar.similar_artist) > 0 UNION all
-SELECT DISTINCT release_artists.artists as artist ,(1000-datediff(now(),FROM_UNIXTIME(max(ce.date))))/100 + COUNT(release_artists.artists) * 20 as cnt FROM release_artists INNER JOIN charts_extended ce ON ce.release_id=release_artists.release_id 
+SELECT DISTINCT release_artists.artists as artist ,COUNT(release_artists.artists) * 20 as cnt FROM release_artists INNER JOIN charts_extended ce ON ce.release_id=release_artists.release_id 
 WHERE ce.artist=%s GROUP by release_artists.artists HAVING COUNT(release_artists.artists) > 0
 UNION all
-SELECT artist_love.artist as artist,"100" as cnt FROM artist_love WHERE artist_love.user=%s
+SELECT artist_love.artist as artist,"50" as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source!='onboarding'
+UNION all
+SELECT artist_love.artist as artist,"20" as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source='onboarding'
 UNION all
 SELECT `auhr`.artist, auhr.count
 FROM artists_user_has_recd auhr WHERE auhr.user=%s AND count='20'
+UNION all
+SELECT release_artists.artists, COUNT(artists) * 5 as cnt
+FROM release_artists
+INNER JOIN listens
+ON listens.release_id=release_artists.release_id
+WHERE listens.user=%s
+GROUP BY release_artists.artists
 ) as final
+WHERE cnt > 1
 GROUP by artist
 ORDER BY cnt DESC"""
  
@@ -294,7 +304,7 @@ ORDER BY cnt DESC"""
 
 	#now we find releases that are by those artists
 
-	getReleases = db_select("SELECT release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists  INNER JOIN releases ON releases.id=release_artists.release_id WHERE auhr.user=%s AND datediff(now(),releases.date) < 180 GROUP BY release_artists.release_id ORDER BY auhr.count ASC",(userName,))
+	getReleases = db_select("SELECT release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists  INNER JOIN releases ON releases.id=release_artists.release_id WHERE auhr.user=%s AND datediff(now(),releases.date) < 180 GROUP BY release_artists.release_id ORDER BY auhr.count DESC LIMIT 0,100",(userName,))
 	dataReleases = getReleases.fetchall()
 	count = 0
 	

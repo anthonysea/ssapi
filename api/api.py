@@ -269,9 +269,9 @@ def update_recommendations(api_key,user):
 SELECT DISTINCT release_artists.artists as artist ,COUNT(release_artists.artists) * 20 as cnt FROM release_artists INNER JOIN charts_extended ce ON ce.release_id=release_artists.release_id 
 WHERE ce.artist=%s GROUP by release_artists.artists HAVING COUNT(release_artists.artists) > 0
 UNION all
-SELECT artist_love.artist as artist,"50" as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source!='onboarding'
+SELECT artist_love.artist as artist,'50' as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source!='onboarding'
 UNION all
-SELECT artist_love.artist as artist,"20" as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source='onboarding'
+SELECT artist_love.artist as artist,'50' as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source='onboarding'
 UNION all
 SELECT `auhr`.artist, auhr.count
 FROM artists_user_has_recd auhr WHERE auhr.user=%s AND count='20'

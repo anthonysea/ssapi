@@ -271,7 +271,7 @@ def update_recommendations(api_key,user):
 			UNION all
 			SELECT artist_love.artist as artist,'50' as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source!='onboarding'
 			UNION all
-			SELECT artist_love.artist as artist,'50' as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source='onboarding'
+			SELECT artist_love.artist as artist,'25' as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source='onboarding'
 			UNION all
 			SELECT `auhr`.artist, auhr.count
 			FROM artists_user_has_recd auhr WHERE auhr.user=%s AND count='20'
@@ -286,7 +286,7 @@ def update_recommendations(api_key,user):
 			WHERE cnt > 1
 			GROUP by artist
 			ORDER BY cnt DESC
-			LIMIT 0,500"""
+			"""
 
 	#get the similar artists that appear more than once
 	getRecs = db_select(sql,(userName,userName,userName,userName,userName,userName))
@@ -305,7 +305,7 @@ def update_recommendations(api_key,user):
 
 	#now we find releases that are by those artists
 
-	getReleases = db_select("SELECT release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists  INNER JOIN releases ON releases.id=release_artists.release_id WHERE auhr.user=%s AND datediff(now(),releases.date) < 180 GROUP BY release_artists.release_id ORDER BY auhr.count DESC",(userName,))
+	getReleases = db_select("SELECT release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists  INNER JOIN releases ON releases.id=release_artists.release_id WHERE auhr.user=%s AND datediff(now(),releases.date) < 365 GROUP BY release_artists.release_id ORDER BY auhr.count DESC",(userName,))
 	dataReleases = getReleases.fetchall()
 	count = 0
 	

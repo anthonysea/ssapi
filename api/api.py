@@ -260,103 +260,97 @@ def get_release(api_key,release_id):
 def update_recommendations(api_key,user):
 	if str(api_key)!=the_api_key:
 		abort(401)
-		userName = str(user)
+	userName = str(user)
 
-		start_time = time.time() 
+	start_time = time.time() 
 
-		sql = """SELECT artist,sum(cnt) as cnt FROM
-				(SELECT DISTINCT similar.similar_artist as artist,COUNT(similar.similar_artist) as cnt FROM release_artists INNER JOIN charts_extended ON charts_extended.release_id=release_artists.release_id INNER JOIN similar ON release_artists.artists=similar.artist INNER JOIN users ON users.name=charts_extended.artist WHERE users.name=%s GROUP BY similar.similar_artist HAVING COUNT(similar.similar_artist) > 0 UNION all
-				SELECT DISTINCT release_artists.artists as artist ,COUNT(release_artists.artists) * 20 as cnt FROM release_artists INNER JOIN charts_extended ce ON ce.release_id=release_artists.release_id 
-				WHERE ce.artist=%s GROUP by release_artists.artists HAVING COUNT(release_artists.artists) > 0
-				UNION all
-				SELECT artist_love.artist as artist,'50' as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source!='onboarding'
-				UNION all
-				SELECT artist_love.artist as artist,'50' as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source='onboarding'
-				UNION all
-				SELECT `auhr`.artist, auhr.count
-				FROM artists_user_has_recd auhr WHERE auhr.user=%s AND count='20'
-				UNION all
-				SELECT release_artists.artists, COUNT(artists) * 5 as cnt
-				FROM release_artists
-				INNER JOIN listens
-				ON listens.release_id=release_artists.release_id
-				WHERE listens.user=%s
-				GROUP BY release_artists.artists
-				) as final
-				WHERE cnt > 1
-				GROUP by artist
-				ORDER BY cnt DESC
-				LIMIT 0,500"""
- 
-		#get the similar artists that appear more than once
-		getRecs = db_select(sql,(userName,userName,userName,userName,userName,userName))
+	sql = """SELECT artist,sum(cnt) as cnt FROM
+			(SELECT DISTINCT similar.similar_artist as artist,COUNT(similar.similar_artist) as cnt FROM release_artists INNER JOIN charts_extended ON charts_extended.release_id=release_artists.release_id INNER JOIN similar ON release_artists.artists=similar.artist INNER JOIN users ON users.name=charts_extended.artist WHERE users.name=%s GROUP BY similar.similar_artist HAVING COUNT(similar.similar_artist) > 0 UNION all
+			SELECT DISTINCT release_artists.artists as artist ,COUNT(release_artists.artists) * 20 as cnt FROM release_artists INNER JOIN charts_extended ce ON ce.release_id=release_artists.release_id 
+			WHERE ce.artist=%s GROUP by release_artists.artists HAVING COUNT(release_artists.artists) > 0
+			UNION all
+			SELECT artist_love.artist as artist,'50' as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source!='onboarding'
+			UNION all
+			SELECT artist_love.artist as artist,'50' as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source='onboarding'
+			UNION all
+			SELECT `auhr`.artist, auhr.count
+			FROM artists_user_has_recd auhr WHERE auhr.user=%s AND count='20'
+			UNION all
+			SELECT release_artists.artists, COUNT(artists) * 5 as cnt
+			FROM release_artists
+			INNER JOIN listens
+			ON listens.release_id=release_artists.release_id
+			WHERE listens.user=%s
+			GROUP BY release_artists.artists
+			) as final
+			WHERE cnt > 1
+			GROUP by artist
+			ORDER BY cnt DESC"""
 
-		dataArtists = getRecs.fetchall()
-		for artistRow in dataArtists:
-			artist = str(artistRow[0])
-			count = str(artistRow[1])
-			key = None
+	#get the similar artists that appear more than once
+	getRecs = db_select(sql,(userName,userName,userName,userName,userName,userName))
 
-			key = hashlib.md5(userName + artist).hexdigest()
+	dataArtists = getRecs.fetchall()
+	for artistRow in dataArtists:
+		artist = str(artistRow[0])
+		count = str(artistRow[1])
+		key = None
+
+		key = hashlib.md5(userName + artist).hexdigest()
+		
+		#now insert this into the artists_user_has_recd
+		insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
+		print "inserted " + artist + " for " + userName
+
+	#now we find releases that are by those artists
+
+	getReleases = db_select("SELECT release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists  INNER JOIN releases ON releases.id=release_artists.release_id WHERE auhr.user=%s AND datediff(now(),releases.date) < 180 GROUP BY release_artists.release_id ORDER BY auhr.count DESC LIMIT 0,100",(userName,))
+	dataReleases = getReleases.fetchall()
+	count = 0
+	
+	#dataReleases = dataReleases[0:50] #this gives us the first 10 releases which is what we want
+
+	for releasesRow in dataReleases:
 			
-			#now insert this into the artists_user_has_recd
-			try:
-				insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
-				print "inserted " + artist + " for " + userName
-			except Exception as e:
-				print e
-				print 'error on auhr insert for ' + artist
-
-
-		#now we find releases that are by those artists
-
-		getReleases = db_select("SELECT release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists  INNER JOIN releases ON releases.id=release_artists.release_id WHERE auhr.user=%s AND datediff(now(),releases.date) < 180 GROUP BY release_artists.release_id ORDER BY auhr.count DESC LIMIT 0,100",(userName,))
-		dataReleases = getReleases.fetchall()
-		count = 0
-		
-		#dataReleases = dataReleases[0:50] #this gives us the first 10 releases which is what we want
-
-		for releasesRow in dataReleases:
+				releaseId = str(releasesRow[0])
+				key = hashlib.md5(userName + releaseId).hexdigest()
+				insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
 				
-					releaseId = str(releasesRow[0])
-					key = hashlib.md5(userName + releaseId).hexdigest()
-					insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
-					
-					print "inserted " + releaseId
-					
+				print "inserted " + releaseId
+				
 
-		#now store the labels that a user has recommended more than once
-		getLabels = db_select("SELECT releases.label_no_country,COUNT(releases.label_no_country) FROM releases INNER JOIN charts_extended ce ON ce.release_id=releases.id WHERE ce.artist=%s GROUP by releases.label_no_country HAVING COUNT(releases.label_no_country) > 1 ORDER BY COUNT(releases.label_no_country) ASC",(userName,))
-		dataLabels = getLabels.fetchall()
+	#now store the labels that a user has recommended more than once
+	getLabels = db_select("SELECT releases.label_no_country,COUNT(releases.label_no_country) FROM releases INNER JOIN charts_extended ce ON ce.release_id=releases.id WHERE ce.artist=%s GROUP by releases.label_no_country HAVING COUNT(releases.label_no_country) > 1 ORDER BY COUNT(releases.label_no_country) ASC",(userName,))
+	dataLabels = getLabels.fetchall()
 
-		for labelRow in dataLabels:
-			label = str(labelRow[0])
-			count = str(labelRow[1])
-			print label + ': ' + count
-			key = hashlib.md5(userName + label).hexdigest()
-			insertLabel = db_insert("INSERT INTO labels_user_has_recd (user,label,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key),count=VALUES(count)",(userName,label,key,count))
+	for labelRow in dataLabels:
+		label = str(labelRow[0])
+		count = str(labelRow[1])
+		print label + ': ' + count
+		key = hashlib.md5(userName + label).hexdigest()
+		insertLabel = db_insert("INSERT INTO labels_user_has_recd (user,label,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key),count=VALUES(count)",(userName,label,key,count))
 
 
-		#now we find releases that are on these labels
-		getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country WHERE luhr.user=%s AND datediff(now(),releases.date) < 180 GROUP BY releases.label_no_country ORDER BY releases.date DESC",(userName,))
-		dataReleases = getReleases.fetchall()
-		count =0
+	#now we find releases that are on these labels
+	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country WHERE luhr.user=%s AND datediff(now(),releases.date) < 180 GROUP BY releases.label_no_country ORDER BY releases.date DESC",(userName,))
+	dataReleases = getReleases.fetchall()
+	count =0
 
-		dataReleases = dataReleases[0:40] #this gives us the first 10 releases which is what we want
-		
-		for releasesRow in dataReleases:
+	dataReleases = dataReleases[0:40] #this gives us the first 10 releases which is what we want
+	
+	for releasesRow in dataReleases:
 
-			releaseId = str(releasesRow[0])
-			key = hashlib.md5(userName + releaseId).hexdigest()
-			insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
-			count = count + 1
-				#print "inserted " + releaseId
+		releaseId = str(releasesRow[0])
+		key = hashlib.md5(userName + releaseId).hexdigest()
+		insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
+		count = count + 1
+			#print "inserted " + releaseId
 
-		print "Finished inserts for " + userName
+	print "Finished inserts for " + userName
 
 
-		#display time taken to run script
-		return("--- %s seconds ---" % (time.time() - start_time) + ' for ' + userName)
+	#display time taken to run script
+	return("--- %s seconds ---" % (time.time() - start_time) + ' for ' + userName)
 
 
 

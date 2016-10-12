@@ -8,6 +8,16 @@ from flask.ext.cache import Cache
 import time
 import hashlib
 
+##############for Discogs API
+import requests
+import json
+import collections
+from collections import Counter #count items in a list
+import operator #to sort a dict
+import hashlib #used to generate the key for the insert
+import re
+###############end Discogs API
+
 #this is for the function db_select
 import MySQLdb
 
@@ -85,6 +95,96 @@ def db_insert(query,params):
 @app.route('/index/')
 def index():
     return render_template('index.html')
+
+
+#############import from Discogs##################
+@app.route('/api/v1.0/<int:api_key>/user/<string:user>/importDiscogs/<string:discogs_user>',methods=['GET'])
+def import_discogs(api_key,user,discogs_user):
+	if str(api_key)!=the_api_key:
+		abort(401)
+	userName = str(user)
+	discogsUser = str(discogs_user)
+
+	headers = {
+    'User-Agent': 'soundshelter.net',
+    'From': 'info@soundshelter.net'  # This is another valid field
+	}
+	
+	#gets collection
+	r = requests.get('https://api.discogs.com/users/' + discogsUser + '/collection/folders/0/releases',headers=headers)
+	#print r.text
+
+
+
+	text = r.text
+	text = text.encode('utf-8')
+	searchJson = json.loads(text)
+	#print searchJson
+
+	#gets collection
+
+	results_per_page = searchJson['pagination']['per_page']
+	#print results_per_page
+
+	num_pages = searchJson['pagination']['pages'] + 1
+	#print num_pages
+
+	#now go through each page
+	data = []
+
+	for page_number in xrange(0,num_pages):
+		url = 'https://api.discogs.com/users/' + discogsUser + '/collection/folders/0/releases?per_page=' + str(results_per_page) + '&page=' + str(page_number)
+		print 'Doing ' + url
+		r = requests.get(url,headers=headers)
+		text = r.text
+		text = text.encode('utf-8')
+
+		#now we have a list of releases, we can pull out the artists
+		searchJson = json.loads(text)
+
+		num_releases = len(searchJson['releases'])
+
+		for x in xrange(0,num_releases):
+			num_artists =  len(searchJson['releases'][x]['basic_information']['artists'])
+			#get all artists 
+			for y in xrange(0,num_artists):
+				artist = searchJson['releases'][x]['basic_information']['artists'][y]['name']
+				if artist is 'Various':
+					pass
+				if artist is 'Unknown Artist':
+					pass
+				data.append(artist)
+		
+
+	total = dict(Counter(data))
+
+	#sorted_x = sorted(total.items(), key=operator.itemgetter(1))
+
+	for x in total:
+		artist = str(x.encode('utf-8'))
+
+		artist = re.sub(r'\(.*?\)', '',artist) #removes the (19) at the end of some artists
+		artist = artist.replace("&","and")
+		artist = artist.replace("'","")
+
+		count = str(total[x])
+
+		key = hashlib.md5(userName + artist).hexdigest()
+		print userName,discogsUser,artist,count,key
+
+
+
+		
+
+		try:
+			insert = db_insert("INSERT INTO discogs_collection (user,discogs_user,artist,count,the_key) VALUES (%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,discogsUser,artist,count,key))
+			print "Inserted for " + artist
+
+		except Exception as e:
+			print e
+
+
+	return "Done!"
 
 
 #########get a users personalised recommendations
@@ -282,6 +382,11 @@ def update_recommendations(api_key,user):
 			ON listens.release_id=release_artists.release_id
 			WHERE listens.user=%s
 			GROUP BY release_artists.artists
+			UNION all
+			SELECT artist,count * 10 as cnt
+			FROM discogs_collection
+			WHERE user=%s
+			AND artist!='Various'
 			) as final
 			WHERE cnt > 1
 			GROUP by artist
@@ -289,7 +394,7 @@ def update_recommendations(api_key,user):
 			"""
 
 	#get the similar artists that appear more than once
-	getRecs = db_select(sql,(userName,userName,userName,userName,userName,userName))
+	getRecs = db_select(sql,(userName,userName,userName,userName,userName,userName,userName))
 
 	dataArtists = getRecs.fetchall()
 	for artistRow in dataArtists:

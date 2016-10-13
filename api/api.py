@@ -132,6 +132,8 @@ def import_discogs(api_key,user,discogs_user):
 	#now go through each page
 	data = []
 
+	counter = 0
+
 	for page_number in xrange(0,num_pages):
 		url = 'https://api.discogs.com/users/' + discogsUser + '/collection/folders/0/releases?per_page=' + str(results_per_page) + '&page=' + str(page_number)
 		print 'Doing ' + url
@@ -172,6 +174,8 @@ def import_discogs(api_key,user,discogs_user):
 		key = hashlib.md5(userName + artist).hexdigest()
 		print userName,discogsUser,artist,count,key
 
+		count += 1
+
 
 
 		
@@ -184,7 +188,7 @@ def import_discogs(api_key,user,discogs_user):
 			print e
 
 
-	return "Done!"
+	return "We picked out " + str(count) + " artists from your Discogs collection"
 
 
 #########get a users personalised recommendations

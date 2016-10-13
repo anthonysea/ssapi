@@ -174,7 +174,7 @@ def import_discogs(api_key,user,discogs_user):
 		key = hashlib.md5(userName + artist).hexdigest()
 		print userName,discogsUser,artist,count,key
 
-		count += 1
+		counter += 1
 
 
 
@@ -188,7 +188,7 @@ def import_discogs(api_key,user,discogs_user):
 			print e
 
 
-	return "We picked out " + str(count) + " artists from your Discogs collection"
+	return "We picked out " + str(counter) + " artists from your Discogs collection"
 
 
 #########get a users personalised recommendations

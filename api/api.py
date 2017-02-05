@@ -452,8 +452,9 @@ JOIN artists_user_has_recd auhr
 ON ra.artists=auhr.artist
 WHERE auhr.user=%s
 GROUP BY releases.label_no_country
-HAVING COUNT(releases.id) > 2
-ORDER BY COUNT(releases.id) DESC
+HAVING COUNT(releases.label_no_country) > 2
+ORDER BY COUNT(releases.`label_no_country`) DESC
+
 ''',(userName,))
 	dataLabels = getLabels.fetchall()
 

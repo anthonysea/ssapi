@@ -444,18 +444,22 @@ def update_recommendations(api_key,user):
 
 
 	#now store the labels: These are the labels that the artists in AUHR have appeared on more than twice
-	getLabels = db_select('''SELECT releases.label_no_country,COUNT(releases.label_no_country),auhr.count,releases.date,releases.id
-FROM releases_all releases
-JOIN release_artists ra
-ON ra.release_id=releases.id
-JOIN artists_user_has_recd auhr
-ON ra.artists=auhr.artist
-WHERE auhr.user=%s
-GROUP BY releases.label_no_country
-HAVING COUNT(releases.label_no_country) > 2
-ORDER BY COUNT(releases.`label_no_country`) DESC
+	try:
+		getLabels = db_select('''SELECT releases.label_no_country,COUNT(releases.label_no_country),auhr.count,releases.date,releases.id
+	FROM releases_all releases
+	JOIN release_artists ra
+	ON ra.release_id=releases.id
+	JOIN artists_user_has_recd auhr
+	ON ra.artists=auhr.artist
+	WHERE auhr.user=%s
+	AND label_no_country!='unknown label'
+	GROUP BY releases.label_no_country
+	HAVING COUNT(releases.label_no_country) > 2
+	ORDER BY COUNT(releases.`label_no_country`) DESC
 
-''',(userName,))
+	''',(userName,))
+	except Exception as e:
+		print e + " - the error is in the label calculation"
 	dataLabels = getLabels.fetchall()
 
 	for labelRow in dataLabels:

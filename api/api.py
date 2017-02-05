@@ -443,7 +443,17 @@ def update_recommendations(api_key,user):
 				
 
 	#now store the labels that a user has recommended more than once
-	getLabels = db_select("SELECT releases.label_no_country,COUNT(releases.label_no_country) FROM releases INNER JOIN charts_extended ce ON ce.release_id=releases.id WHERE ce.artist=%s GROUP by releases.label_no_country HAVING COUNT(releases.label_no_country) > 1 ORDER BY COUNT(releases.label_no_country) ASC",(userName,))
+	getLabels = db_select('''SELECT releases.label_no_country,COUNT(releases.label_no_country),auhr.count,releases.date
+FROM releases_all releases
+JOIN release_artists ra
+ON ra.release_id=releases.id
+JOIN artists_user_has_recd auhr
+ON ra.artists=auhr.artist
+WHERE auhr.user=%s
+GROUP BY releases.label_no_country
+HAVING COUNT(releases.id) > 2
+ORDER BY COUNT(releases.id) DESC
+''',(userName,))
 	dataLabels = getLabels.fetchall()
 
 	for labelRow in dataLabels:

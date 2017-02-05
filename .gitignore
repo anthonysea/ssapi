@@ -2,3 +2,4 @@ config.py
 api/venv/
 *pyc
 fabfile.py
+venv

@@ -442,7 +442,7 @@ def update_recommendations(api_key,user):
 				print "inserted " + releaseId
 				
 
-	#now store the labels that a user has recommended more than once
+	#now store the labels: These are the labels that the artists in AUHR have appeared on more than twice
 	getLabels = db_select('''SELECT releases.label_no_country,COUNT(releases.label_no_country),auhr.count,releases.date
 FROM releases_all releases
 JOIN release_artists ra
@@ -465,7 +465,7 @@ ORDER BY COUNT(releases.id) DESC
 
 
 	#now we find releases that are on these labels
-	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country WHERE luhr.user=%s AND datediff(now(),releases.date) < 180 GROUP BY releases.label_no_country ORDER BY releases.date DESC",(userName,))
+	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases releases_all INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country WHERE luhr.user=%s AND datediff(now(),releases.date) < 180 GROUP BY releases.label_no_country ORDER BY releases.date DESC",(userName,))
 	dataReleases = getReleases.fetchall()
 	count =0
 

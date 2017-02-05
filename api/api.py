@@ -440,6 +440,7 @@ def update_recommendations(api_key,user):
 				insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
 				
 				print "inserted " + releaseId
+			
 				
 
 	#now store the labels: These are the labels that the artists in AUHR have appeared on more than twice

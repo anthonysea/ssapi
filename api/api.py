@@ -454,7 +454,8 @@ def update_recommendations(api_key,user):
 	WHERE auhr.user=%s
 	AND label_no_country!='unknown label'
 	GROUP BY releases.label_no_country
-	HAVING COUNT(releases.label_no_country) > 2
+	HAVING COUNT(releases.label_no_country) > 10
+	AND auhr.count > 20
 	ORDER BY COUNT(releases.`label_no_country`) DESC
 
 	''',(userName,))

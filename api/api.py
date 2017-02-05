@@ -441,10 +441,10 @@ def update_recommendations(api_key,user):
 				
 				print "inserted " + releaseId
 			
-				
+
 
 	#now store the labels: These are the labels that the artists in AUHR have appeared on more than twice
-	getLabels = db_select('''SELECT releases.label_no_country,COUNT(releases.label_no_country),auhr.count,releases.date
+	getLabels = db_select('''SELECT releases.label_no_country,COUNT(releases.label_no_country),auhr.count,releases.date,releases.id
 FROM releases_all releases
 JOIN release_artists ra
 ON ra.release_id=releases.id

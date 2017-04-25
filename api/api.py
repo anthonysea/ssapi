@@ -397,21 +397,27 @@ def update_recommendations(api_key,user):
 				ON users.name=gf.user
 				WHERE users.name=%s
 				GROUP BY similar.similar_artist
-				
 			UNION all
-				SELECT artist,count * 10 as cnt
+				SELECT artist,count * 50 as cnt
 				FROM discogs_collection
 				WHERE user=%s
 				AND artist!='Various'
-				AND count>1
+				AND count>1	
+			UNION all
+				SELECT artist,'50'
+				FROM spotify_top_artists
+				WHERE user=%s
+				
 			) as final
 			WHERE cnt > 1
 			GROUP by artist
 			ORDER BY cnt DESC
 			"""
 
+	
+
 	#get the similar artists that appear more than once
-	getRecs = db_select(sql,(userName,userName,userName,userName,userName,userName,userName,userName))
+	getRecs = db_select(sql,(userName,userName,userName,userName,userName,userName,userName,userName,userName))
 
 	dataArtists = getRecs.fetchall()
 	for artistRow in dataArtists:

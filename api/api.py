@@ -437,7 +437,7 @@ def update_recommendations(api_key,user):
 	dataReleases = getReleases.fetchall()
 	count = 0
 	
-	dataReleases = dataReleases[0:40] #this gives us the first 70 releases which is what we want
+	dataReleases = dataReleases[0:70] #this gives us the first 70 releases which is what we want
 
 	for releasesRow in dataReleases:
 			

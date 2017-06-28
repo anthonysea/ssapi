@@ -433,11 +433,11 @@ def update_recommendations(api_key,user):
 
 	#now we find releases that are by those artists
 
-	getReleases = db_select("SELECT release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists  INNER JOIN releases ON releases.id=release_artists.release_id WHERE auhr.user=%s AND datediff(now(),releases.date) < 365 GROUP BY release_artists.release_id ORDER BY auhr.count DESC",(userName,))
+	getReleases = db_select("SELECT release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists  INNER JOIN releases ON releases.id=release_artists.release_id WHERE auhr.user=%s AND datediff(now(),releases.date) < 180 GROUP BY release_artists.release_id ORDER BY auhr.count DESC",(userName,))
 	dataReleases = getReleases.fetchall()
 	count = 0
 	
-	dataReleases = dataReleases[0:70] #this gives us the first 70 releases which is what we want
+	dataReleases = dataReleases[0:100] #this gives us the first 70 releases which is what we want
 
 	for releasesRow in dataReleases:
 			
@@ -484,7 +484,7 @@ def update_recommendations(api_key,user):
 	dataReleases = getReleases.fetchall()
 	count =0
 
-	dataReleases = dataReleases[0:40] #this gives us the first 10 releases which is what we want
+	dataReleases = dataReleases[0:100] #this gives us the first 10 releases which is what we want
 	
 	for releasesRow in dataReleases:
 

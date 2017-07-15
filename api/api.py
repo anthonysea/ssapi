@@ -398,7 +398,7 @@ def update_recommendations(api_key,user):
 				WHERE users.name=%s
 				GROUP BY similar.similar_artist
 			UNION all
-				SELECT artist,count * 50 as cnt
+				SELECT artist,count * 30 as cnt
 				FROM discogs_collection
 				WHERE user=%s
 				AND artist!='Various'
@@ -407,12 +407,23 @@ def update_recommendations(api_key,user):
 				SELECT artist,'50'
 				FROM spotify_top_artists
 				WHERE user=%s
+			UNION ALL
+				SELECT artists as artist, COUNT(*) * 30 as cnt
+				FROM release_artists
+				JOIN buys
+				ON release_artists.release_id=buys.release_id
+				WHERE buys.user=%s
+				
 				
 			) as final
 			WHERE cnt > 1
 			GROUP by artist
 			ORDER BY cnt DESC
+			
 			"""
+
+	# print sql
+	# exit()
 
 	
 
@@ -433,11 +444,11 @@ def update_recommendations(api_key,user):
 
 	#now we find releases that are by those artists
 
-	getReleases = db_select("SELECT release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists  INNER JOIN releases ON releases.id=release_artists.release_id WHERE auhr.user=%s AND datediff(now(),releases.date) < 180 GROUP BY release_artists.release_id ORDER BY auhr.count DESC",(userName,))
+	getReleases = db_select("SELECT release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists  INNER JOIN releases ON releases.id=release_artists.release_id WHERE auhr.user=%s AND datediff(now(),releases.date) < 90 GROUP BY release_artists.release_id ORDER BY auhr.count DESC",(userName,))
 	dataReleases = getReleases.fetchall()
 	count = 0
 	
-	dataReleases = dataReleases[0:300] #this gives us the first 70 releases which is what we want
+	dataReleases = dataReleases[0:90] #this gives us the first 70 releases which is what we want
 
 	for releasesRow in dataReleases:
 			
@@ -480,11 +491,11 @@ def update_recommendations(api_key,user):
 
 
 	#now we find releases that are on these labels
-	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country WHERE luhr.user=%s AND datediff(now(),releases.date) < 180 GROUP BY releases.id ORDER BY luhr.count DESC",(userName,))
+	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country WHERE luhr.user=%s AND datediff(now(),releases.date) < 90 GROUP BY releases.id ORDER BY luhr.count DESC",(userName,))
 	dataReleases = getReleases.fetchall()
 	count =0
 
-	dataReleases = dataReleases[0:300] #this gives us the first 10 releases which is what we want
+	dataReleases = dataReleases[0:90] #this gives us the first 10 releases which is what we want
 	
 	for releasesRow in dataReleases:
 

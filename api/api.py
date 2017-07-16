@@ -446,7 +446,7 @@ def update_recommendations(api_key,user):
 		key = hashlib.md5(userName + artist).hexdigest()
 		
 		#now insert this into the artists_user_has_recd
-		#insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
+		insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
 		print "inserted " + artist + " for " + userName
 
 	#now we find releases that are by those artists
@@ -461,7 +461,7 @@ def update_recommendations(api_key,user):
 			
 				releaseId = str(releasesRow[0])
 				key = hashlib.md5(userName + releaseId).hexdigest()
-				#insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
+				insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
 				
 				print "inserted " + releaseId
 			

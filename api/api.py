@@ -446,7 +446,7 @@ def update_recommendations(api_key,user):
 		key = hashlib.md5(userName + artist).hexdigest()
 		
 		#now insert this into the artists_user_has_recd
-		insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
+		#insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
 		print "inserted " + artist + " for " + userName
 
 	#now we find releases that are by those artists
@@ -455,13 +455,13 @@ def update_recommendations(api_key,user):
 	dataReleases = getReleases.fetchall()
 	count = 0
 	
-	dataReleases = dataReleases[0:3] #this gives us the first 70 releases which is what we want
+	dataReleases = dataReleases[0:5] #this gives us the first 70 releases which is what we want
 
 	for releasesRow in dataReleases:
 			
 				releaseId = str(releasesRow[0])
 				key = hashlib.md5(userName + releaseId).hexdigest()
-				insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
+				#insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
 				
 				print "inserted " + releaseId
 			
@@ -469,20 +469,37 @@ def update_recommendations(api_key,user):
 
 	#now store the labels: These are the labels that the artists in AUHR have appeared on more than twice
 	try:
-		getLabels = db_select('''SELECT releases.label_no_country,COUNT(releases.label_no_country),auhr.count,releases.date,releases.id
+		getLabels = db_select('''SELECT label,cnt
+FROM (
+SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 5 as cnt
 	FROM releases_all releases
-	JOIN release_artists ra
-	ON ra.release_id=releases.id
-	JOIN artists_user_has_recd auhr
-	ON ra.artists=auhr.artist
-	WHERE auhr.user=%s
-	AND label_no_country!='unknown label'
+	JOIN listens
+	ON listens.release_id=releases.id
+	WHERE listens.user=%s
+	AND releases.id!='0'
 	GROUP BY releases.label_no_country
-	HAVING COUNT(releases.label_no_country) > 10
-	AND auhr.count > 20
-	ORDER BY COUNT(releases.`label_no_country`) DESC
+UNION ALL
+	SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 20 as cnt
+	FROM releases_all releases
+	JOIN charts_extended ce
+	ON ce.release_id=releases.id
+	WHERE ce.artist=%s
+	AND releases.id!='0'
+	GROUP BY releases.label_no_country
+UNION ALL
+SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 20 as cnt
+	FROM releases_all releases
+	JOIN buys
+	ON buys.release_id=releases.id
+	WHERE buys.user=%s
+	AND releases.id!='0'
+	GROUP BY releases.label_no_country
+) as deets
 
-	''',(userName,))
+ORDER BY cnt DESC
+LIMIT 0,100
+
+	''',(userName,userName,userName))
 	
 	except Exception as e:
 		print e + " - the error is in the label calculation"
@@ -502,7 +519,7 @@ def update_recommendations(api_key,user):
 	dataReleases = getReleases.fetchall()
 	count =0
 
-	dataReleases = dataReleases[0:3] #this gives us the first 10 releases which is what we want
+	dataReleases = dataReleases[0:5] #this gives us the first 10 releases which is what we want
 	
 	for releasesRow in dataReleases:
 

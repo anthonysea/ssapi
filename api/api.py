@@ -452,7 +452,7 @@ def update_recommendations(api_key,user,stage):
 		key = hashlib.md5(userName + artist).hexdigest()
 		
 		#now insert this into the artists_user_has_recd
-		#insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
+		insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
 		print "inserted " + artist + " for " + userName
 
 	#now we find releases that are by those artists
@@ -525,7 +525,7 @@ def update_recommendations(api_key,user,stage):
 		count = str(labelRow[1])
 		print label + ': ' + count
 		key = hashlib.md5(userName + label).hexdigest()
-		#insertLabel = db_insert("INSERT INTO labels_user_has_recd (user,label,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key),count=VALUES(count)",(userName,label,key,count))
+		insertLabel = db_insert("INSERT INTO labels_user_has_recd (user,label,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key),count=VALUES(count)",(userName,label,key,count))
 
 
 	

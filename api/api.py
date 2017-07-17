@@ -360,11 +360,17 @@ def get_release(api_key,release_id):
 
 
 #########update a users recs
-@app.route('/api/v1.0/<int:api_key>/user/<string:user>/updateRecommendations',methods=['GET'])
-def update_recommendations(api_key,user):
+@app.route('/api/v1.0/<int:api_key>/user/<string:user>/updateRecommendations/<string:stage>',methods=['GET'])
+def update_recommendations(api_key,user,stage):
 	if str(api_key)!=the_api_key:
 		abort(401)
 	userName = str(user)
+	stage = str(stage)
+
+	if stage=='onboarding':
+		date_diff=90
+	else:
+		date_diff=5
 
 	start_time = time.time() 
 
@@ -423,7 +429,7 @@ def update_recommendations(api_key,user):
 				GROUP BY release_artists.artists
 				
 			) as final
-			WHERE cnt > 1
+			WHERE cnt > 5
 			GROUP by artist
 			ORDER BY cnt DESC
 			LIMIT 0,500
@@ -446,16 +452,24 @@ def update_recommendations(api_key,user):
 		key = hashlib.md5(userName + artist).hexdigest()
 		
 		#now insert this into the artists_user_has_recd
-		insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
+		#insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
 		print "inserted " + artist + " for " + userName
 
 	#now we find releases that are by those artists
 
-	getReleases = db_select("SELECT release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists  INNER JOIN releases ON releases.id=release_artists.release_id WHERE auhr.user=%s AND datediff(now(),releases.date) < 5 GROUP BY release_artists.release_id ORDER BY auhr.count DESC",(userName,))
+	getReleases = db_select("""SELECT release_artists.release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists INNER JOIN releases_all releases ON releases.id=release_artists.release_id LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=auhr.user WHERE auhr.user=%s AND datediff(now(),releases.date) < %s AND recommendations.release_id IS NULL
+								GROUP BY release_artists.release_id ORDER BY auhr.count DESC LIMIT 0,80""",(userName,date_diff))
 	dataReleases = getReleases.fetchall()
 	count = 0
+
+	if stage=='onboarding':
+		dataReleases = dataReleases[0:80] #this gives us the first 70 releases which is what we want
+		
+	else:
+		dataReleases = dataReleases[0:2] #this gives us the first 70 releases which is what we want
+		
 	
-	dataReleases = dataReleases[0:5] #this gives us the first 70 releases which is what we want
+	
 
 	for releasesRow in dataReleases:
 			
@@ -470,34 +484,34 @@ def update_recommendations(api_key,user):
 	#now store the labels: These are the labels that the artists in AUHR have appeared on more than twice
 	try:
 		getLabels = db_select('''SELECT label,cnt
-FROM (
-SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 5 as cnt
-	FROM releases_all releases
-	JOIN listens
-	ON listens.release_id=releases.id
-	WHERE listens.user=%s
-	AND releases.id!='0'
-	GROUP BY releases.label_no_country
-UNION ALL
-	SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 20 as cnt
-	FROM releases_all releases
-	JOIN charts_extended ce
-	ON ce.release_id=releases.id
-	WHERE ce.artist=%s
-	AND releases.id!='0'
-	GROUP BY releases.label_no_country
-UNION ALL
-SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 20 as cnt
-	FROM releases_all releases
-	JOIN buys
-	ON buys.release_id=releases.id
-	WHERE buys.user=%s
-	AND releases.id!='0'
-	GROUP BY releases.label_no_country
-) as deets
-
-ORDER BY cnt DESC
-LIMIT 0,100
+			FROM (
+			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 5 as cnt
+				FROM releases_all releases
+				JOIN listens
+				ON listens.release_id=releases.id
+				WHERE listens.user=%s
+				AND releases.id!='0'
+				GROUP BY releases.label_no_country
+			UNION ALL
+				SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 20 as cnt
+				FROM releases_all releases
+				JOIN charts_extended ce
+				ON ce.release_id=releases.id
+				WHERE ce.artist=%s
+				AND releases.id!='0'
+				GROUP BY releases.label_no_country
+			UNION ALL
+			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 20 as cnt
+				FROM releases_all releases
+				JOIN buys
+				ON buys.release_id=releases.id
+				WHERE buys.user=%s
+				AND releases.id!='0'
+				GROUP BY releases.label_no_country
+			) as deets
+			WHERE cnt > 5
+			ORDER BY cnt DESC
+			
 
 	''',(userName,userName,userName))
 	
@@ -511,15 +525,24 @@ LIMIT 0,100
 		count = str(labelRow[1])
 		print label + ': ' + count
 		key = hashlib.md5(userName + label).hexdigest()
-		insertLabel = db_insert("INSERT INTO labels_user_has_recd (user,label,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key),count=VALUES(count)",(userName,label,key,count))
+		#insertLabel = db_insert("INSERT INTO labels_user_has_recd (user,label,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key),count=VALUES(count)",(userName,label,key,count))
 
+
+	
 
 	#now we find releases that are on these labels
-	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country WHERE luhr.user=%s AND datediff(now(),releases.date) < 5 GROUP BY releases.id ORDER BY luhr.count DESC",(userName,))
+	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country  LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=luhr.user WHERE luhr.user=%s AND datediff(now(),releases.date) < %s GROUP BY releases.id ORDER BY luhr.count DESC LIMIT 0,80",(userName,date_diff))
 	dataReleases = getReleases.fetchall()
 	count =0
 
-	dataReleases = dataReleases[0:5] #this gives us the first 10 releases which is what we want
+	if stage=='onboarding':
+		dataReleases = dataReleases[0:80] #this gives us the first 70 releases which is what we want
+		
+	else:
+		dataReleases = dataReleases[0:2] #this gives us the first 70 releases which is what we want
+		
+
+	
 	
 	for releasesRow in dataReleases:
 
@@ -527,7 +550,7 @@ LIMIT 0,100
 		key = hashlib.md5(userName + releaseId).hexdigest()
 		insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
 		count = count + 1
-			#print "inserted " + releaseId
+		print "inserted " + releaseId
 
 	print "Finished inserts for " + userName
 

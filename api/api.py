@@ -370,7 +370,7 @@ def update_recommendations(api_key,user,stage):
 	if stage=='onboarding':
 		date_diff=90
 	else:
-		date_diff=5
+		date_diff=7
 
 	start_time = time.time() 
 
@@ -457,7 +457,7 @@ def update_recommendations(api_key,user,stage):
 
 	#now we find releases that are by those artists
 
-	getReleases = db_select("""SELECT release_artists.release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists INNER JOIN releases_all releases ON releases.id=release_artists.release_id LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=auhr.user WHERE auhr.user=%s AND datediff(now(),releases.date) < %s AND recommendations.release_id IS NULL
+	getReleases = db_select("""SELECT release_artists.release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists INNER JOIN releases_all releases ON releases.id=release_artists.release_id LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=auhr.user WHERE auhr.user=%s AND datediff(now(),releases.date) <= %s AND recommendations.release_id IS NULL
 								GROUP BY release_artists.release_id ORDER BY auhr.count DESC LIMIT 0,80""",(userName,date_diff))
 	dataReleases = getReleases.fetchall()
 	count = 0
@@ -531,7 +531,7 @@ def update_recommendations(api_key,user,stage):
 	
 
 	#now we find releases that are on these labels
-	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country  LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=luhr.user WHERE luhr.user=%s AND datediff(now(),releases.date) < %s GROUP BY releases.id ORDER BY luhr.count DESC LIMIT 0,80",(userName,date_diff))
+	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country  LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=luhr.user WHERE luhr.user=%s AND datediff(now(),releases.date) <= %s GROUP BY releases.id ORDER BY luhr.count DESC LIMIT 0,80",(userName,date_diff))
 	dataReleases = getReleases.fetchall()
 	count =0
 

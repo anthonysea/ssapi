@@ -421,7 +421,7 @@ def update_recommendations(api_key,user,stage):
 				WHERE buys.user=%s
 				GROUP BY release_artists.artists
 			UNION ALL
-				SELECT artists as artist, COUNT(*) * -15 as cnt
+				SELECT artists as artist, COUNT(*) * -5 as cnt
 				FROM release_artists
 				JOIN dislike
 				ON release_artists.release_id=dislike.release_id
@@ -452,7 +452,7 @@ def update_recommendations(api_key,user,stage):
 		key = hashlib.md5(userName + artist).hexdigest()
 		
 		#now insert this into the artists_user_has_recd
-		insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
+		#insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
 		print "inserted " + artist + " for " + userName
 
 	#now we find releases that are by those artists
@@ -483,7 +483,7 @@ def update_recommendations(api_key,user,stage):
 
 	#now store the labels: These are the labels that the artists in AUHR have appeared on more than twice
 	try:
-		getLabels = db_select('''SELECT label,cnt
+		getLabels = db_select('''SELECT label,sum(cnt) as cnt
 			FROM (
 			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 5 as cnt
 				FROM releases_all releases
@@ -493,7 +493,7 @@ def update_recommendations(api_key,user,stage):
 				AND releases.id!='0'
 				GROUP BY releases.label_no_country
 			UNION ALL
-				SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 20 as cnt
+			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 20 as cnt
 				FROM releases_all releases
 				JOIN charts_extended ce
 				ON ce.release_id=releases.id
@@ -501,15 +501,21 @@ def update_recommendations(api_key,user,stage):
 				AND releases.id!='0'
 				GROUP BY releases.label_no_country
 			UNION ALL
-			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 20 as cnt
+			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 30 as cnt
 				FROM releases_all releases
 				JOIN buys
 				ON buys.release_id=releases.id
 				WHERE buys.user=%s
 				AND releases.id!='0'
 				GROUP BY releases.label_no_country
+			UNION ALL
+			(SELECT DISTINCT ll.label,COUNT(ll.id) * 100 as cnt
+				FROM label_love ll
+				WHERE ll.user=%s
+				GROUP BY ll.label)
 			) as deets
 			WHERE cnt > 5
+			GROUP BY label
 			ORDER BY cnt DESC
 			
 
@@ -525,7 +531,7 @@ def update_recommendations(api_key,user,stage):
 		count = str(labelRow[1])
 		print label + ': ' + count
 		key = hashlib.md5(userName + label).hexdigest()
-		insertLabel = db_insert("INSERT INTO labels_user_has_recd (user,label,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key),count=VALUES(count)",(userName,label,key,count))
+		#insertLabel = db_insert("INSERT INTO labels_user_has_recd (user,label,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key),count=VALUES(count)",(userName,label,key,count))
 
 
 	

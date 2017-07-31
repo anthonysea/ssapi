@@ -533,7 +533,7 @@ def update_recommendations(api_key,user,stage):
 	
 
 	#now we find releases that are on these labels
-	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country  LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=luhr.user WHERE luhr.user=%s AND datediff(now(),releases.date) <= %s GROUP BY releases.id ORDER BY luhr.count DESC LIMIT 0,80",(userName,date_diff))
+	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country  LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=luhr.user WHERE luhr.user=%s AND datediff(now(),releases.date) <= %s GROUP BY releases.label_no_country ORDER BY luhr.count DESC LIMIT 0,80",(userName,date_diff))
 	dataReleases = getReleases.fetchall()
 	count =0
 

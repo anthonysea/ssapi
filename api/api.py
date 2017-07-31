@@ -517,10 +517,11 @@ def update_recommendations(api_key,user,stage):
 			ORDER BY cnt DESC
 			
 
-	''',(userName,userName,userName))
+	''',(userName,userName,userName,userName))
 	
 	except Exception as e:
 		print str(e) + " - the error is in the label calculation"
+		continue
 
 	dataLabels = getLabels.fetchall()
 

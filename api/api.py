@@ -520,7 +520,7 @@ def update_recommendations(api_key,user,stage):
 	''',(userName,userName,userName))
 	
 	except Exception as e:
-		print e + " - the error is in the label calculation"
+		print str(e) + " - the error is in the label calculation"
 
 	dataLabels = getLabels.fetchall()
 

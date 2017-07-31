@@ -461,7 +461,7 @@ def update_recommendations(api_key,user,stage):
 	count = 0
 
 	if stage=='onboarding':
-		dataReleases = dataReleases[0:80] #this gives us the first 70 releases which is what we want
+		dataReleases = dataReleases[0:20] #this gives us the first 70 releases which is what we want
 		
 	else:
 		dataReleases = dataReleases[0:2] #this gives us the first 70 releases which is what we want
@@ -514,14 +514,11 @@ def update_recommendations(api_key,user,stage):
 			) as deets
 			WHERE cnt > 5
 			GROUP BY label
-			ORDER BY cnt DESC
-			
-
-	''',(userName,userName,userName,userName))
+			ORDER BY cnt DESC''',(userName,userName,userName,userName))
 	
 	except Exception as e:
 		print str(e) + " - the error is in the label calculation"
-		continue()
+		
 
 	dataLabels = getLabels.fetchall()
 
@@ -530,7 +527,7 @@ def update_recommendations(api_key,user,stage):
 		count = str(labelRow[1])
 		print label + ': ' + count
 		key = hashlib.md5(userName + label).hexdigest()
-		#insertLabel = db_insert("INSERT INTO labels_user_has_recd (user,label,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key),count=VALUES(count)",(userName,label,key,count))
+		insertLabel = db_insert("INSERT INTO labels_user_has_recd (user,label,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key),count=VALUES(count)",(userName,label,key,count))
 
 
 	
@@ -541,7 +538,7 @@ def update_recommendations(api_key,user,stage):
 	count =0
 
 	if stage=='onboarding':
-		dataReleases = dataReleases[0:80] #this gives us the first 70 releases which is what we want
+		dataReleases = dataReleases[0:20] #this gives us the first 70 releases which is what we want
 		
 	else:
 		dataReleases = dataReleases[0:2] #this gives us the first 70 releases which is what we want

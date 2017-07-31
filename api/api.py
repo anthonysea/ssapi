@@ -435,7 +435,7 @@ def update_recommendations(api_key,user,stage):
 			LIMIT 0,500
 			"""
 
-
+ 
 	
 
 	#get the similar artists that appear more than once

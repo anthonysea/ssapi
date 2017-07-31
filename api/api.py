@@ -435,8 +435,6 @@ def update_recommendations(api_key,user,stage):
 			LIMIT 0,500
 			"""
 
-	# print sql
-	# exit()
 
 	
 

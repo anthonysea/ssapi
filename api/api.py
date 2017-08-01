@@ -461,7 +461,7 @@ def update_recommendations(api_key,user,stage):
 	count = 0
 
 	if stage=='onboarding':
-		dataReleases = dataReleases[0:20] #this gives us the first 70 releases which is what we want
+		dataReleases = dataReleases[0:50] #this gives us the first 70 releases which is what we want
 		
 	else:
 		dataReleases = dataReleases[0:2] #this gives us the first 70 releases which is what we want
@@ -538,7 +538,7 @@ def update_recommendations(api_key,user,stage):
 	count =0
 
 	if stage=='onboarding':
-		dataReleases = dataReleases[0:20] #this gives us the first 70 releases which is what we want
+		dataReleases = dataReleases[0:10] #this gives us the first 70 releases which is what we want
 		
 	else:
 		dataReleases = dataReleases[0:2] #this gives us the first 70 releases which is what we want

@@ -432,7 +432,7 @@ def update_recommendations(api_key,user,stage):
 			WHERE cnt > 5
 			GROUP by artist
 			ORDER BY cnt DESC
-			LIMIT 0,500
+			LIMIT 0,150
 			"""
 
  
@@ -514,7 +514,8 @@ def update_recommendations(api_key,user,stage):
 			) as deets
 			WHERE cnt > 5
 			GROUP BY label
-			ORDER BY cnt DESC''',(userName,userName,userName,userName))
+			ORDER BY cnt DESC
+			LIMIT 0,150''',(userName,userName,userName,userName))
 	
 	except Exception as e:
 		print str(e) + " - the error is in the label calculation"

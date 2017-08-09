@@ -451,20 +451,25 @@ def update_recommendations(api_key,user,stage):
 		print "inserted " + artist + " for " + userName
 
 	#now we find releases that are by those artists
+	if stage=='onboarding':
+		number_of_items = 50
+	else:
+		number_of_items = 2
+
 
 	getReleases = db_select("""SELECT release_artists.release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists INNER JOIN releases_all releases ON releases.id=release_artists.release_id LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=auhr.user WHERE auhr.user=%s AND datediff(now(),releases.date) <= %s AND recommendations.release_id IS NULL
-								GROUP BY release_artists.release_id ORDER BY auhr.count DESC LIMIT 0,50""",(userName,date_diff))
+								GROUP BY release_artists.release_id ORDER BY auhr.count DESC LIMIT 0,""" + number_of_items + """""",(userName,date_diff))
 	dataReleases = getReleases.fetchall()
 	count = 0
 
 	#we reverse so that we can then sort the recommendations by rec.id
 	dataReleases = reversed(dataReleases)
 
-	if stage=='onboarding':
-		dataReleases = dataReleases[0:50] #this gives us the first 70 releases which is what we want
+	# if stage=='onboarding':
+	# 	dataReleases = dataReleases[0:50] #this gives us the first 70 releases which is what we want
 		
-	else:
-		dataReleases = dataReleases[48:2] #this gives us the first 70 releases which is what we want
+	# else:
+	# 	dataReleases = dataReleases[48:2] #this gives us the first 70 releases which is what we want
 		
 	
 
@@ -532,22 +537,26 @@ def update_recommendations(api_key,user,stage):
 		key = hashlib.md5(userName + label).hexdigest()
 		insertLabel = db_insert("INSERT INTO labels_user_has_recd (user,label,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key),count=VALUES(count)",(userName,label,key,count))
 
-
+	#now we find releases that are by those artists
+	if stage=='onboarding':
+		number_of_items = 20
+	else:
+		number_of_items = 2
 	
 
 	#now we find releases that are on these labels
-	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country  LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=luhr.user WHERE luhr.user=%s AND datediff(now(),releases.date) <= %s GROUP BY releases.id ORDER BY luhr.count DESC LIMIT 0,10",(userName,date_diff))
+	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country  LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=luhr.user WHERE luhr.user=%s AND datediff(now(),releases.date) <= %s GROUP BY releases.id ORDER BY luhr.count DESC LIMIT 0," + number_of_items + "",(userName,date_diff))
 	dataReleases = getReleases.fetchall()
 	count =0
 
 	#we reverse so that we can then sort the recommendations by rec.id
 	dataReleases = reversed(dataReleases)
 
-	if stage=='onboarding':
-		dataReleases = dataReleases[0:10] #this gives us the first 70 releases which is what we want
+	# if stage=='onboarding':
+	# 	dataReleases = dataReleases[0:10] #this gives us the first 70 releases which is what we want
 		
-	else:
-		dataReleases = dataReleases[8:2] #this gives us the first 70 releases which is what we want
+	# else:
+	# 	dataReleases = dataReleases[8:2] #this gives us the first 70 releases which is what we want
 		
 	
 	

@@ -9,3 +9,4 @@ sys.path.insert(0,"/var/www/ssapi/api")
 
 from api import app as application
 application.secret_key = 'Add your secret key'
+

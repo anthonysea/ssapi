@@ -365,9 +365,9 @@ def update_recommendations(api_key,user,stage):
 	stage = str(stage)
 
 	if stage=='onboarding':
-		date_diff=21
+		date_diff=40
 	else:
-		date_diff=14
+		date_diff=21
 
 	start_time = time.time() 
 

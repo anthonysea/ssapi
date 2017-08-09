@@ -30,7 +30,7 @@ from flaskext.mysql import MySQL
 import json
 
 
-from . import config
+import config
 
 #https://pythonhosted.org/Flask-Cache/
 

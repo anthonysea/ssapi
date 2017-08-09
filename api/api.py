@@ -524,7 +524,7 @@ def update_recommendations(api_key,user,stage):
 		print str(e) + " - the error is in the label calculation"
 		
 
-	dataLabels = getLabels.fetchall()
+	dataLabels = getLabels.fetchall() 
 
 	for labelRow in dataLabels:
 		label = str(labelRow[0])

@@ -371,6 +371,84 @@ def update_recommendations(api_key,user,stage):
 
 	start_time = time.time() 
 
+	#now store the labels: These are the labels that the artists in AUHR have appeared on more than twice
+	try:
+		getLabels = db_select('''SELECT label,sum(cnt) as cnt
+			FROM (
+			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 5 as cnt
+				FROM releases_all releases
+				JOIN listens
+				ON listens.release_id=releases.id
+				WHERE listens.user=%s
+				AND releases.id!='0'
+				GROUP BY releases.label_no_country
+			UNION ALL
+			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 20 as cnt
+				FROM releases_all releases
+				JOIN charts_extended ce
+				ON ce.release_id=releases.id
+				WHERE ce.artist=%s
+				AND releases.id!='0'
+				GROUP BY releases.label_no_country
+			UNION ALL
+			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 30 as cnt
+				FROM releases_all releases
+				JOIN buys
+				ON buys.release_id=releases.id
+				WHERE buys.user=%s
+				AND releases.id!='0'
+				GROUP BY releases.label_no_country
+			UNION ALL
+			(SELECT DISTINCT ll.label,COUNT(ll.id) * 100 as cnt
+				FROM label_love ll
+				WHERE ll.user=%s
+				GROUP BY ll.label)
+			) as deets
+			WHERE cnt > 5
+			GROUP BY label
+			ORDER BY cnt DESC
+			LIMIT 0,150''',(userName,userName,userName,userName))
+	
+	except Exception as e:
+		print str(e) + " - the error is in the label calculation"
+		
+
+	dataLabels = getLabels.fetchall() 
+
+	for labelRow in dataLabels:
+		label = str(labelRow[0])
+		count = str(labelRow[1])
+		print label + ': ' + count
+		key = hashlib.md5(userName + label).hexdigest()
+		insertLabel = db_insert("INSERT INTO labels_user_has_recd (user,label,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key),count=VALUES(count)",(userName,label,key,count))
+
+	#now we find releases that are by those artists
+	if stage=='onboarding':
+		number_of_items = 20
+	else:
+		number_of_items = 2
+	
+
+	#now we find releases that are on these labels
+	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country  LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=luhr.user WHERE luhr.user=%s AND datediff(now(),releases.date) <= %s GROUP BY releases.label_no_country ORDER BY luhr.count DESC LIMIT 0," + str(number_of_items) + "",(userName,date_diff))
+	dataReleases = getReleases.fetchall()
+	count =0
+
+	#we reverse so that we can then sort the recommendations by rec.id
+	dataReleases = reversed(dataReleases)
+
+	
+	for releasesRow in dataReleases:
+
+		releaseId = str(releasesRow[0])
+		key = hashlib.md5(userName + releaseId).hexdigest()
+		insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
+		count = count + 1
+		print "inserted " + releaseId
+
+
+	#######################now do the artists
+
 	sql = """SELECT artist,sum(cnt) as cnt FROM
 			(SELECT DISTINCT similar.similar_artist as artist,COUNT(similar.similar_artist) as cnt FROM release_artists INNER JOIN charts_extended ON charts_extended.release_id=release_artists.release_id INNER JOIN similar ON release_artists.artists=similar.artist INNER JOIN users ON users.name=charts_extended.artist WHERE users.name=%s GROUP BY similar.similar_artist HAVING COUNT(similar.similar_artist) > 0 UNION all
 				SELECT DISTINCT release_artists.artists as artist ,COUNT(release_artists.artists) * 20 as cnt FROM release_artists INNER JOIN charts_extended ce ON ce.release_id=release_artists.release_id 
@@ -486,88 +564,7 @@ def update_recommendations(api_key,user,stage):
 			
 
 
-	#now store the labels: These are the labels that the artists in AUHR have appeared on more than twice
-	try:
-		getLabels = db_select('''SELECT label,sum(cnt) as cnt
-			FROM (
-			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 5 as cnt
-				FROM releases_all releases
-				JOIN listens
-				ON listens.release_id=releases.id
-				WHERE listens.user=%s
-				AND releases.id!='0'
-				GROUP BY releases.label_no_country
-			UNION ALL
-			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 20 as cnt
-				FROM releases_all releases
-				JOIN charts_extended ce
-				ON ce.release_id=releases.id
-				WHERE ce.artist=%s
-				AND releases.id!='0'
-				GROUP BY releases.label_no_country
-			UNION ALL
-			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 30 as cnt
-				FROM releases_all releases
-				JOIN buys
-				ON buys.release_id=releases.id
-				WHERE buys.user=%s
-				AND releases.id!='0'
-				GROUP BY releases.label_no_country
-			UNION ALL
-			(SELECT DISTINCT ll.label,COUNT(ll.id) * 100 as cnt
-				FROM label_love ll
-				WHERE ll.user=%s
-				GROUP BY ll.label)
-			) as deets
-			WHERE cnt > 5
-			GROUP BY label
-			ORDER BY cnt DESC
-			LIMIT 0,150''',(userName,userName,userName,userName))
 	
-	except Exception as e:
-		print str(e) + " - the error is in the label calculation"
-		
-
-	dataLabels = getLabels.fetchall() 
-
-	for labelRow in dataLabels:
-		label = str(labelRow[0])
-		count = str(labelRow[1])
-		print label + ': ' + count
-		key = hashlib.md5(userName + label).hexdigest()
-		insertLabel = db_insert("INSERT INTO labels_user_has_recd (user,label,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key),count=VALUES(count)",(userName,label,key,count))
-
-	#now we find releases that are by those artists
-	if stage=='onboarding':
-		number_of_items = 20
-	else:
-		number_of_items = 2
-	
-
-	#now we find releases that are on these labels
-	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country  LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=luhr.user WHERE luhr.user=%s AND datediff(now(),releases.date) <= %s GROUP BY releases.id ORDER BY luhr.count DESC LIMIT 0," + str(number_of_items) + "",(userName,date_diff))
-	dataReleases = getReleases.fetchall()
-	count =0
-
-	#we reverse so that we can then sort the recommendations by rec.id
-	dataReleases = reversed(dataReleases)
-
-	# if stage=='onboarding':
-	# 	dataReleases = dataReleases[0:10] #this gives us the first 70 releases which is what we want
-		
-	# else:
-	# 	dataReleases = dataReleases[8:2] #this gives us the first 70 releases which is what we want
-		
-	
-	
-	
-	for releasesRow in dataReleases:
-
-		releaseId = str(releasesRow[0])
-		key = hashlib.md5(userName + releaseId).hexdigest()
-		insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
-		count = count + 1
-		print "inserted " + releaseId
 
 	print "Finished inserts for " + userName
 

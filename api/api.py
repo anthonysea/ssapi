@@ -365,9 +365,9 @@ def update_recommendations(api_key,user,stage):
 	stage = str(stage)
 
 	if stage=='onboarding':
-		date_diff=40
+		date_diff=720
 	else:
-		date_diff=21
+		date_diff=30
 
 	start_time = time.time() 
 
@@ -407,7 +407,7 @@ def update_recommendations(api_key,user,stage):
 			WHERE cnt > 5
 			GROUP BY label
 			ORDER BY cnt DESC
-			LIMIT 0,150''',(userName,userName,userName,userName))
+			LIMIT 0,50''',(userName,userName,userName,userName))
 	
 	except Exception as e:
 		print str(e) + " - the error is in the label calculation"
@@ -447,7 +447,7 @@ def update_recommendations(api_key,user,stage):
 		print "inserted " + releaseId
 
 
-	#######################now do the artists
+	#######################now do the artists_user_has_recd
 
 	sql = """SELECT artist,sum(cnt) as cnt FROM
 			(SELECT DISTINCT similar.similar_artist as artist,COUNT(similar.similar_artist) as cnt FROM release_artists INNER JOIN charts_extended ON charts_extended.release_id=release_artists.release_id INNER JOIN similar ON release_artists.artists=similar.artist INNER JOIN users ON users.name=charts_extended.artist WHERE users.name=%s GROUP BY similar.similar_artist HAVING COUNT(similar.similar_artist) > 0 UNION all

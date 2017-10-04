@@ -22,7 +22,6 @@ import re
 import MySQLdb
 
 
-
 import collections
 
 #database connect
@@ -456,7 +455,7 @@ def update_recommendations(api_key,user,stage):
 			UNION all
 				SELECT artist_love.artist as artist,'75' as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source!='onboarding'
 			UNION all
-				SELECT artist_love.artist as artist,'25' as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source='onboarding'
+				SELECT artist_love.artist as artist,'10' as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source='onboarding'
 			UNION all
 				SELECT `auhr`.artist, auhr.count
 				FROM artists_user_has_recd auhr WHERE auhr.user=%s AND count='20'

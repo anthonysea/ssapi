@@ -510,8 +510,6 @@ def update_recommendations(api_key,user,stage):
 			"""
 
  
-	
-
 	#get the similar artists that appear more than once
 	getRecs = db_select(sql,(userName,userName,userName,userName,userName,userName,userName,userName,userName,userName,userName))
 

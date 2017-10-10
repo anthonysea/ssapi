@@ -414,6 +414,7 @@ def update_recommendations(api_key,user,stage):
 				GROUP BY ll.label)
 			) as deets
 			WHERE cnt > 5
+			AND label!='unknown Label'
 			GROUP BY label
 			ORDER BY cnt DESC
 			LIMIT 0,50''',(userName,userName,userName,userName))

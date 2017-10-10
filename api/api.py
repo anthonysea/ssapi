@@ -364,7 +364,7 @@ def update_recommendations(api_key,user,stage):
 	stage = str(stage)
 
 	if stage=='onboarding':
-		date_diff=720
+		date_diff=360
 	else:
 		date_diff=30
 
@@ -398,6 +398,16 @@ def update_recommendations(api_key,user,stage):
 				AND releases.id!='0'
 				GROUP BY releases.label_no_country
 			UNION ALL
+			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 10 as cnt 
+				FROM artist_love 
+				INNER JOIN
+				release_artists ra
+				ON ra.artists=artist_love.artist
+				INNER JOIN 
+				releases ON releases.id=ra.release_id
+				WHERE artist_love.user='Doris' AND artist_love.source='onboarding'
+				GROUP BY releases.label_no_country
+			UNION ALL
 			(SELECT DISTINCT ll.label,COUNT(ll.id) * 100 as cnt
 				FROM label_love ll
 				WHERE ll.user=%s
@@ -423,7 +433,7 @@ def update_recommendations(api_key,user,stage):
 
 	#now we find releases that are by those artists
 	if stage=='onboarding':
-		number_of_items = 20
+		number_of_items = 100
 	else:
 		number_of_items = 2
 	
@@ -527,13 +537,13 @@ def update_recommendations(api_key,user,stage):
 
 	#now we find releases that are by those artists
 	if stage=='onboarding':
-		number_of_items = 50
+		number_of_items = 100
 	else:
 		number_of_items = 2
 
 
 	getReleases = db_select("""SELECT release_artists.release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists INNER JOIN releases_all releases ON releases.id=release_artists.release_id LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=auhr.user WHERE auhr.user=%s AND datediff(now(),releases.date) <= %s AND recommendations.release_id IS NULL
-								GROUP BY release_artists.release_id ORDER BY auhr.count DESC LIMIT 0,""" + str(number_of_items) + """""",(userName,date_diff))
+								GROUP BY release_artists.artists ORDER BY auhr.count DESC LIMIT 0,""" + str(number_of_items) + """""",(userName,date_diff))
 	dataReleases = getReleases.fetchall()
 	count = 0
 

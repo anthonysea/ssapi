@@ -364,7 +364,7 @@ def update_recommendations(api_key,user,stage):
 	stage = str(stage)
 
 	if stage=='onboarding':
-		date_diff=360
+		date_diff=180
 	else:
 		date_diff=30
 
@@ -405,19 +405,29 @@ def update_recommendations(api_key,user,stage):
 				ON ra.artists=artist_love.artist
 				INNER JOIN 
 				releases ON releases.id=ra.release_id
-				WHERE artist_love.user='Doris' AND artist_love.source='onboarding'
+				WHERE artist_love.user=%s AND artist_love.source='onboarding'
 				GROUP BY releases.label_no_country
 			UNION ALL
-			(SELECT DISTINCT ll.label,COUNT(ll.id) * 100 as cnt
+			SELECT DISTINCT ll.label,COUNT(ll.id) * 100 as cnt
 				FROM label_love ll
 				WHERE ll.user=%s
-				GROUP BY ll.label)
+				GROUP BY ll.label
+			UNION ALL
+			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 8 as cnt 
+				FROM discogs_collection 
+				INNER JOIN
+				release_artists ra
+				ON ra.artists=discogs_collection.artist
+				INNER JOIN 
+				releases ON releases.id=ra.release_id
+				WHERE discogs_collection.user=%s
+				GROUP BY releases.label_no_country
 			) as deets
 			WHERE cnt > 5
 			AND label!='unknown Label'
 			GROUP BY label
 			ORDER BY cnt DESC
-			LIMIT 0,50''',(userName,userName,userName,userName))
+			LIMIT 0,50''',(userName,userName,userName,userName,userName,userName))
 	
 	except Exception as e:
 		print str(e) + " - the error is in the label calculation"
@@ -436,7 +446,7 @@ def update_recommendations(api_key,user,stage):
 	if stage=='onboarding':
 		number_of_items = 100
 	else:
-		number_of_items = 2
+		number_of_items = 100
 	
 
 	#now we find releases that are on these labels
@@ -478,17 +488,17 @@ def update_recommendations(api_key,user,stage):
 				WHERE listens.user=%s
 				GROUP BY release_artists.artists
 			UNION all
-				SELECT similar_artist as artist,COUNT(similar.id)
-				FROM similar
-				JOIN genre_artists ga
-				ON ga.artist=similar.artist
-				JOIN genre_follows gf
-				ON gf.genre=ga.genre
-				JOIN users
-				ON users.name=gf.user
-				WHERE users.name=%s
-				GROUP BY similar.similar_artist
-			UNION all
+			-- 	SELECT similar_artist as artist,COUNT(similar.id)
+			-- 	FROM similar
+			-- 	JOIN genre_artists ga
+			-- 	ON ga.artist=similar.artist
+			-- 	JOIN genre_follows gf
+			-- 	ON gf.genre=ga.genre
+			-- 	JOIN users
+			-- 	ON users.name=gf.user
+			-- 	WHERE users.name=%s
+			-- 	GROUP BY similar.similar_artist
+			-- UNION all
 				SELECT artist,count * 30 as cnt
 				FROM discogs_collection
 				WHERE user=%s
@@ -540,7 +550,7 @@ def update_recommendations(api_key,user,stage):
 	if stage=='onboarding':
 		number_of_items = 100
 	else:
-		number_of_items = 2
+		number_of_items = 100
 
 
 	getReleases = db_select("""SELECT release_artists.release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists INNER JOIN releases_all releases ON releases.id=release_artists.release_id LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=auhr.user WHERE auhr.user=%s AND datediff(now(),releases.date) <= %s AND recommendations.release_id IS NULL

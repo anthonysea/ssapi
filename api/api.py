@@ -446,7 +446,7 @@ def update_recommendations(api_key,user,stage):
 
 	#now we find releases that are by those artists
 	if stage=='onboarding':
-		number_of_items = 50
+		number_of_items = 70
 	else:
 		number_of_items = 3
 	
@@ -550,7 +550,7 @@ def update_recommendations(api_key,user,stage):
 
 	#now we find releases that are by those artists
 	if stage=='onboarding':
-		number_of_items = 50
+		number_of_items = 70
 	else:
 		number_of_items = 3
 

@@ -364,7 +364,7 @@ def update_recommendations(api_key,user,stage):
 	stage = str(stage)
 
 	if stage=='onboarding':
-		date_diff=180
+		date_diff=360
 		#and delete the existing recommendations
 		delRecs = db_insert('DELETE FROM recommendations WHERE user=%s',(userName,))
 	else:

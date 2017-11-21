@@ -321,11 +321,11 @@ def get_release(api_key,release_id):
 
 		release_data = {'release_id':release_id,'artists':all_artists,'title':title,'label':label,'genre':genre,'date':date,'small_img':small_img,'big_img':big_img}
 
-	#get savers
+	#get audio
 	#####pass release_id into query to get release details	
 	cursor = mysql.connect().cursor()
 	try:
-		results = cursor.execute("SELECT artist from charts_extended where artist!= 'Sound Shelter' AND release_id='" + release_id + "'")
+		results = cursor.execute("SELECT track_number,track_name,url from audio_links where release_id='" + release_id + "'")
 	except Exception as e:
 		return "Failed to run db query: " + str(e)
 
@@ -334,12 +334,22 @@ def get_release(api_key,release_id):
 	if numrows==0:
 		return "No record found"
 
-
+	audio_data = []
+	for x in range(0,numrows):
+		row = cursor.fetchone()
+		user = str(row[0])
+		d = collections.OrderedDict()
+		d['track_number'] = str(row[0])
+		d['track_name'] = str(row[1])
+		d['track_url'] = str(row[2])
+		
+		audio_data.append(d)
+		
 	
 
 	
 
-	final_data = {'details':release_data}
+	final_data = {'details':release_data,'audio':audio_data}
 	resp = jsonify(results=final_data)
 	return resp
 

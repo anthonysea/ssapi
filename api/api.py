@@ -335,21 +335,11 @@ def get_release(api_key,release_id):
 		return "No record found"
 
 
-	##get list of users who saved this release
-	saver_data = []
-	for x in range(0,numrows):
-		row = cursor.fetchone()
-		user = str(row[0])
-		d = collections.OrderedDict()
-		d['user'] = user
-		d['user_url'] = 'https://api.soundshelter.net/api/v1.0/' + str(api_key) + '/user/' + user + '/recommendations'
-		saver_data.append(d)
-		
-	print saver_data
+	
 
 	
 
-	final_data = {'details':release_data,'savers':saver_data}
+	final_data = {'details':release_data}
 	resp = jsonify(results=final_data)
 	return resp
 

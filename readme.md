@@ -2,6 +2,9 @@
 
 ####email info@soundshelter.net for API key
 
+__Get a list of Collections__
+
+`http://api.soundshelter.net/api/v1.0/<api_key>/collections`
 
 __Get all Releases by an Artist__
 
@@ -22,3 +25,4 @@ __Get a users personalised recommendations__
 __Update a users personalised recommendations__
 
 `https://api.soundshelter.net/api/v1.0/<api_key>/user/<user_name>/updateRecommendations`
+

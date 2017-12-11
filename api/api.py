@@ -209,7 +209,7 @@ def list_collections(api_key):
 	for x in range(0,numrows):
 		row = cursor.fetchone()
 		d = collections.OrderedDict()
-		d['slug'] = str(row[0])
+		d['slug'] = '/collection/' + str(row[0])
 		d['title'] = str(row[1])
 		d['description'] = str(row[2])
 		d['genre_image'] = str(row[3])

@@ -212,7 +212,7 @@ def list_collections(api_key):
 		d['slug'] = '/collection/' + str(row[0])
 		d['title'] = str(row[1])
 		d['description'] = str(row[2])
-		d['genre_image'] = str(row[3])
+		d['image_url'] = str(row[3])
 
 		data.append(d)
 

@@ -187,6 +187,46 @@ def import_discogs(api_key,user,discogs_user):
 	return "We picked out " + str(counter) + " artists from your Discogs collection"
 
 
+
+########get a list of collections
+@app.route('/api/v1.0/<int:api_key>/collections',methods=['GET'])
+@cache.cached(timeout=50)
+def list_collections(api_key):
+	if str(api_key)!=the_api_key:
+		abort(401)
+	
+	cursor = mysql.connect().cursor()
+	try:
+		results = cursor.execute("SELECT slug,title,description,genre_image FROM genre_details ORDER BY slug")
+	except Exception as e:
+		return "Failed to run db query for collection: " + str(e)
+
+	numrows = int(cursor.rowcount)
+	if numrows==0:
+		return "No records found"
+
+	data = []
+	for x in range(0,numrows):
+		row = cursor.fetchone()
+		d = collections.OrderedDict()
+		d['slug'] = str(row[0])
+		d['title'] = str(row[1])
+		d['description'] = str(row[2])
+		d['genre_image'] = str(row[3])
+
+		data.append(d)
+
+	final_data = {'collections':data}
+	resp = jsonify(results=final_data)
+	return resp
+
+
+
+
+
+
+
+
 #########get a users personalised recommendations
 @app.route('/api/v1.0/<int:api_key>/user/<string:user>/recommendations',methods=['GET'])
 def get_recommendations(api_key,user):
@@ -215,7 +255,7 @@ def get_artist(api_key,artist):
 	numrows = int(cursor.rowcount)
 
 	if numrows==0:
-		return "No record found"
+		return "No records found"
 
 	id_data = []
 	for x in range(0,numrows):

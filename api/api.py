@@ -227,6 +227,9 @@ def list_collections(api_key):
 
 
 
+
+
+
 #########get a users personalised recommendations
 @app.route('/api/v1.0/<int:api_key>/user/<string:user>/recommendations',methods=['GET'])
 def get_recommendations(api_key,user):
@@ -268,8 +271,8 @@ def get_artist(api_key,artist):
 		d['label'] = str(row[6])
 		d['genre'] = str(row[8])
 		d['date'] = str(row[9])
-		d['small_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-MED.jpg'
-		d['big_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-BIG.jpg'
+		d['small_img'] = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-MED.jpg'
+		d['big_img'] = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-BIG.jpg'
 		d['api_release_id'] = 'https://api.soundshelter.net/api/v1.0/' + str(api_key) + '/release/' + release_id
 		id_data.append(d)
 		
@@ -310,8 +313,8 @@ def get_label(api_key,label):
 		d['label'] = str(row[6])
 		d['genre'] = str(row[8])
 		d['date'] = str(row[9])
-		d['small_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-MED.jpg'
-		d['big_img'] = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-BIG.jpg'
+		d['small_img'] = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-MED.jpg'
+		d['big_img'] = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-BIG.jpg'
 		d['api_release_id'] = 'https://api.soundshelter.net/api/v1.0/' + str(api_key) + '/release/' + release_id
 		id_data.append(d)
 		
@@ -356,8 +359,8 @@ def get_release(api_key,release_id):
 		label = str(row[6])
 		genre = str(row[8])
 		date = str(row[9])
-		small_img = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-MED.jpg'
-		big_img = 'https://www.soundshelter.net/images/covers/CS' + release_id + '-01A-BIG.jpg'
+		small_img = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-MED.jpg'
+		big_img = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-BIG.jpg'
 
 		release_data = {'release_id':release_id,'artists':all_artists,'title':title,'label':label,'genre':genre,'date':date,'small_img':small_img,'big_img':big_img}
 

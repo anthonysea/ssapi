@@ -221,7 +221,46 @@ def list_collections(api_key):
 	return resp
 
 
+#######get releases on a collection or genre
+@app.route('/api/v1.0/<int:api_key>/collection/<string:collection>',methods=['GET'])
+@cache.cached(timeout=50)
+def get_collection(api_key,collection):
+	if str(api_key)!=the_api_key:
+		abort(401)
+	collection = str(collection)
+	if len(collection) ==0:
+		abort(404)
 
+	cursor = mysql.connect().cursor()
+	try:
+		results = cursor.execute("SELECT releases.*,COUNT(DISTINCT ce.artist) as num FROM releases_all releases INNER JOIN charts_extended ce ON ce.release_id=releases.id INNER JOIN release_artists ra ON ra.release_id=releases.id LEFT JOIN genre_artists ON genre_artists.artist=ra.artists LEFT JOIN genre_labels ON genre_labels.label=releases.label_no_country WHERE genre_artists.genre=%s OR genre_labels.genre=%s GROUP by releases.id ORDER BY releases.date DESC",(collection,collection))
+	except Exception as e:
+		return "Failed to run db query: " + str(e)
+
+	numrows = int(cursor.rowcount)
+
+	if numrows==0:
+		return "No records found"
+
+	id_data = []
+	for x in range(0,numrows):
+		row = cursor.fetchone()
+		release_id = str(row[0])
+		d = collections.OrderedDict()
+		d['release_id'] = release_id
+		d['all_artists'] = str(row[2])
+		d['title'] = str(row[4])
+		d['label'] = str(row[6])
+		d['genre'] = str(row[8])
+		d['date'] = str(row[9])
+		d['small_img'] = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-MED.jpg'
+		d['big_img'] = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-BIG.jpg'
+		d['api_release_id'] = 'https://api.soundshelter.net/api/v1.0/' + str(api_key) + '/release/' + release_id
+		id_data.append(d)
+		
+	final_data = {'releases':id_data}
+	resp = jsonify(results=final_data)
+	return resp
 
 
 

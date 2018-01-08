@@ -222,25 +222,28 @@ def list_collections(api_key):
 
 
 #######get releases on a collection or genre
-@app.route('/api/v1.0/<int:api_key>/collection/<string:collection>',methods=['GET'])
+@app.route('/api/v1.0/<int:api_key>/collection/<string:collection>/<int:page>',methods=['GET'])
 @cache.cached(timeout=50)
-def get_collection(api_key,collection):
+def get_collection(api_key,collection,page):
 	if str(api_key)!=the_api_key:
 		abort(401)
 	collection = str(collection)
 	if len(collection) ==0:
 		abort(404)
 
+	limit = 40
+	offset = (int(page) * int(limit)) + 1
+
 	cursor = mysql.connect().cursor()
 	try:
-		results = cursor.execute("SELECT releases.*,COUNT(DISTINCT ce.artist) as num FROM releases_all releases INNER JOIN charts_extended ce ON ce.release_id=releases.id INNER JOIN release_artists ra ON ra.release_id=releases.id LEFT JOIN genre_artists ON genre_artists.artist=ra.artists LEFT JOIN genre_labels ON genre_labels.label=releases.label_no_country WHERE genre_artists.genre=%s OR genre_labels.genre=%s GROUP by releases.id ORDER BY releases.date DESC",(collection,collection))
+		results = cursor.execute("SELECT releases.*,COUNT(DISTINCT ce.artist) as num FROM releases_all releases INNER JOIN charts_extended ce ON ce.release_id=releases.id INNER JOIN release_artists ra ON ra.release_id=releases.id LEFT JOIN genre_artists ON genre_artists.artist=ra.artists LEFT JOIN genre_labels ON genre_labels.label=releases.label_no_country WHERE genre_artists.genre=%s OR genre_labels.genre=%s GROUP by releases.id ORDER BY releases.date DESC LIMIT %s,%s",(collection,collection,offset,limit))
 	except Exception as e:
 		return "Failed to run db query: " + str(e)
 
 	numrows = int(cursor.rowcount)
 
 	if numrows==0:
-		return "No records found"
+		return "{'results':{}}"
 
 	id_data = []
 	for x in range(0,numrows):
@@ -450,7 +453,7 @@ def update_recommendations(api_key,user,stage):
 		#and delete the existing recommendations
 		delRecs = db_insert('DELETE FROM recommendations WHERE user=%s',(userName,))
 	else:
-		date_diff=10
+		date_diff=30
 
 	start_time = time.time() 
 
@@ -507,7 +510,7 @@ def update_recommendations(api_key,user,stage):
 				WHERE discogs_collection.user=%s
 				GROUP BY releases.label_no_country
 			) as deets
-			WHERE cnt > 5
+			WHERE cnt > 0
 			AND label!='unknown Label'
 			GROUP BY label
 			ORDER BY cnt DESC
@@ -608,7 +611,7 @@ def update_recommendations(api_key,user,stage):
 				GROUP BY release_artists.artists
 				
 			) as final
-			WHERE cnt > 5
+			WHERE cnt > 0
 			GROUP by artist
 			ORDER BY cnt DESC
 			LIMIT 0,150

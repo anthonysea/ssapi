@@ -260,7 +260,7 @@ def get_collection(api_key,collection,page):
 		d['date'] = str(row[9])
 		d['time'] = str(row[12])
 		d['sub_genre'] = str(row[22])
-		d['cat_number'] = str(row[13])
+		d['cat_number'] = str(row[13]).strip()
 		d['small_img'] = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-MED.jpg'
 		d['big_img'] = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-BIG.jpg'
 		d['api_release_id'] = 'https://api.soundshelter.net/api/v1.0/' + str(api_key) + '/release/' + release_id

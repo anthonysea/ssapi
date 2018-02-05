@@ -232,7 +232,7 @@ def get_collection(api_key,collection,page):
 	if len(collection) ==0:
 		abort(404)
 
-	limit = 40
+	limit = 60
 	offset = (int(page) * int(limit)) + 1
 
 	cursor = mysql.connect().cursor()

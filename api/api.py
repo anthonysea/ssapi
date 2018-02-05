@@ -252,11 +252,15 @@ def get_collection(api_key,collection,page):
 		release_id = str(row[0])
 		d = collections.OrderedDict()
 		d['release_id'] = release_id
+		d['artist'] = str(row[1])
 		d['all_artists'] = str(row[2])
 		d['title'] = str(row[4])
 		d['label'] = str(row[6])
 		d['genre'] = str(row[8])
 		d['date'] = str(row[9])
+		d['time'] = str(row[12])
+		d['sub_genre'] = str(row[22])
+		d['cat_number'] = str(row[13])
 		d['small_img'] = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-MED.jpg'
 		d['big_img'] = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-BIG.jpg'
 		d['api_release_id'] = 'https://api.soundshelter.net/api/v1.0/' + str(api_key) + '/release/' + release_id

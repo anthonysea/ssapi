@@ -396,7 +396,7 @@ def get_release(api_key,release_id):
 	for x in range(0,numrows):
 		row = cursor.fetchone()
 		release_id = str(row[0])
-		#artists = str(row[1])
+		artist = str(row[1])
 		all_artists = str(row[2])
 		title = str(row[4])
 		label = str(row[6])
@@ -405,7 +405,7 @@ def get_release(api_key,release_id):
 		small_img = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-MED.jpg'
 		big_img = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-BIG.jpg'
 
-		release_data = {'release_id':release_id,'artists':all_artists,'title':title,'label':label,'genre':genre,'date':date,'small_img':small_img,'big_img':big_img}
+		release_data = {'release_id':release_id,'artist':artist,'artists':all_artists,'title':title,'label':label,'genre':genre,'date':date,'small_img':small_img,'big_img':big_img}
 
 	#get audio
 	#####pass release_id into query to get release details	
@@ -427,7 +427,7 @@ def get_release(api_key,release_id):
 		d = collections.OrderedDict()
 		d['track_number'] = str(row[0])
 		d['track_name'] = str(row[1])
-		d['track_url'] = str(row[2])
+		d['track_url'] = str(row[2]).replace('http','https')
 		
 		audio_data.append(d)
 		

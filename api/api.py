@@ -197,7 +197,7 @@ def list_collections(api_key):
 	
 	cursor = mysql.connect().cursor()
 	try:
-		results = cursor.execute("SELECT slug,title,description,genre_image FROM genre_details ORDER BY slug")
+		results = cursor.execute("SELECT slug,title,description,genre_image,short FROM genre_details ORDER BY slug")
 	except Exception as e:
 		return "Failed to run db query for collection: " + str(e)
 
@@ -213,6 +213,7 @@ def list_collections(api_key):
 		d['title'] = str(row[1])
 		d['description'] = str(row[2])
 		d['image_url'] = str(row[3])
+		d['short'] = str(row[4])
 
 		data.append(d)
 

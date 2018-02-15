@@ -4,9 +4,11 @@ sys.path.append("/var/www/ssapi/api")
 sys.path.append('/var/www/ssapi')
 
 from flask import Flask, request, render_template, jsonify,abort, make_response
-from flask.ext.cache import Cache
+# from flask.ext.cache import Cache
+from flask_cache import Cache
 import time
 import hashlib
+import md5
 
 ##############for Discogs API
 import requests
@@ -93,100 +95,32 @@ def index():
     return render_template('index.html')
 
 
-#############import from Discogs##################
-@app.route('/api/v1.0/<int:api_key>/user/<string:user>/importDiscogs/<string:discogs_user>',methods=['GET'])
-def import_discogs(api_key,user,discogs_user):
+#############login in email#######################
+@app.route('/api/v1.0/<int:api_key>/user/login/email',methods=['POST'])
+def login_email(api_key):
 	if str(api_key)!=the_api_key:
 		abort(401)
-	userName = str(user)
-	discogsUser = str(discogs_user)
-
-	headers = {
-    'User-Agent': 'soundshelter.net',
-    'From': 'info@soundshelter.net'  # This is another valid field
-	}
+	email = str(request.form['email'])
+	m = hashlib.md5()
+	m.update(request.form['password'])
+	password = m.hexdigest()
 	
-	#gets collection
-	r = requests.get('https://api.discogs.com/users/' + discogsUser + '/collection/folders/0/releases',headers=headers)
-	#print r.text
+	#now check the database
+	cursor = mysql.connect().cursor()
+	try:
+		results = cursor.execute("SELECT * FROM users WHERE email=%s and password=%s",(email,password))
+	except Exception as e:
+		return "Failed to run db query for login email: " + str(e)
 
-
-
-	text = r.text
-	text = text.encode('utf-8')
-	searchJson = json.loads(text)
-	#print searchJson
-
-	#gets collection
-
-	results_per_page = searchJson['pagination']['per_page']
-	#print results_per_page
-
-	num_pages = searchJson['pagination']['pages'] + 1
-	#print num_pages
-
-	#now go through each page
-	data = []
-
-	counter = 0
-
-	for page_number in xrange(0,num_pages):
-		url = 'https://api.discogs.com/users/' + discogsUser + '/collection/folders/0/releases?per_page=' + str(results_per_page) + '&page=' + str(page_number)
-		print 'Doing ' + url
-		r = requests.get(url,headers=headers)
-		text = r.text
-		text = text.encode('utf-8')
-
-		#now we have a list of releases, we can pull out the artists
-		searchJson = json.loads(text)
-
-		num_releases = len(searchJson['releases'])
-
-		for x in xrange(0,num_releases):
-			num_artists =  len(searchJson['releases'][x]['basic_information']['artists'])
-			#get all artists 
-			for y in xrange(0,num_artists):
-				artist = searchJson['releases'][x]['basic_information']['artists'][y]['name']
-				if artist is 'Various':
-					pass
-				if artist is 'Unknown Artist':
-					pass
-				data.append(artist)
-		
-
-	total = dict(Counter(data))
-
-	#sorted_x = sorted(total.items(), key=operator.itemgetter(1))
-
-	for x in total:
-		artist = str(x.encode('utf-8'))
-
-		artist = re.sub(r'\(.*?\)', '',artist) #removes the (19) at the end of some artists
-		artist = artist.replace("&","and")
-		artist = artist.replace("'","")
-
-		count = str(total[x])
-
-		key = hashlib.md5(userName + artist).hexdigest()
-		print userName,discogsUser,artist,count,key
-
-		counter += 1
-
-
-
-		
-
-		try:
-			insert = db_insert("INSERT INTO discogs_collection (user,discogs_user,artist,count,the_key) VALUES (%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,discogsUser,artist,count,key))
-			print "Inserted for " + artist
-
-		except Exception as e:
-			print e
-
-
-	return "We picked out " + str(counter) + " artists from your Discogs collection"
-
-
+	numrows = int(cursor.rowcount)
+	output = {}
+	if numrows==0:
+		output.update({'success':'false','message':"No record found for that email"})
+		return jsonify(output)
+	else:
+		output.update({'success':'true','message':"A record found for that email"})
+		return jsonify(output)
+	
 
 ########get a list of collections
 @app.route('/api/v1.0/<int:api_key>/collections',methods=['GET'])
@@ -233,11 +167,14 @@ def get_collection(api_key,collection,page):
 		abort(404)
 
 	limit = 60
-	offset = (int(page) * int(limit)) + 1
+	if page!=0:
+		offset = (int(page) * int(limit)) + 1
+	else:
+		offset = 0
 
 	cursor = mysql.connect().cursor()
 	try:
-		results = cursor.execute("SELECT releases.*,COUNT(DISTINCT ce.artist) as num FROM releases_all releases INNER JOIN charts_extended ce ON ce.release_id=releases.id INNER JOIN release_artists ra ON ra.release_id=releases.id LEFT JOIN genre_artists ON genre_artists.artist=ra.artists LEFT JOIN genre_labels ON genre_labels.label=releases.label_no_country WHERE genre_artists.genre=%s OR genre_labels.genre=%s GROUP by releases.id ORDER BY releases.date DESC LIMIT %s,%s",(collection,collection,offset,limit))
+		results = cursor.execute("SELECT releases.*,'' as num FROM releases_all releases INNER JOIN release_artists ra ON ra.release_id=releases.id LEFT JOIN genre_artists ON genre_artists.artist=ra.artists LEFT JOIN genre_labels ON genre_labels.label=releases.label_no_country WHERE genre_artists.genre=%s OR genre_labels.genre=%s GROUP by releases.id ORDER BY releases.date DESC LIMIT %s,%s",(collection,collection,offset,limit))
 	except Exception as e:
 		return "Failed to run db query: " + str(e)
 
@@ -254,16 +191,18 @@ def get_collection(api_key,collection,page):
 		d['release_id'] = release_id
 		d['artist'] = str(row[1])
 		d['all_artists'] = str(row[2])
-		d['title'] = str(row[4])
-		d['label'] = str(row[6])
-		d['genre'] = str(row[8])
-		d['date'] = str(row[9])
-		d['time'] = str(row[12])
-		d['sub_genre'] = str(row[22])
-		d['cat_number'] = str(row[13]).strip()
+		d['title'] = str(row[5])
+		d['label'] = str(row[7])
+		d['genre'] = str(row[9])#
+		d['date'] = str(row[10])#
+		d['time'] = str(row[13])
+		d['sub_genre'] = str(row[23])
+		d['cat_number'] = str(row[14]).strip() #date
 		d['small_img'] = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-MED.jpg'
 		d['big_img'] = 'https://soundshelter.nyc3.digitaloceanspaces.com/images/covers/CS' + release_id + '-01A-BIG.jpg'
 		d['api_release_id'] = 'https://api.soundshelter.net/api/v1.0/' + str(api_key) + '/release/' + release_id
+		d['remixers'] = str(row[3])
+		d['itunes_url'] = str(row[18])
 		id_data.append(d)
 		
 	final_data = {'releases':id_data}
@@ -683,6 +622,98 @@ def update_recommendations(api_key,user,stage):
 	return("--- %s seconds ---" % (time.time() - start_time) + ' for ' + userName)
 
 
+#############import from Discogs##################
+@app.route('/api/v1.0/<int:api_key>/user/<string:user>/importDiscogs/<string:discogs_user>',methods=['GET'])
+def import_discogs(api_key,user,discogs_user):
+	if str(api_key)!=the_api_key:
+		abort(401)
+	userName = str(user)
+	discogsUser = str(discogs_user)
+
+	headers = {
+    'User-Agent': 'soundshelter.net',
+    'From': 'info@soundshelter.net'  # This is another valid field
+	}
+	
+	#gets collection
+	r = requests.get('https://api.discogs.com/users/' + discogsUser + '/collection/folders/0/releases',headers=headers)
+	#print r.text
+
+
+
+	text = r.text
+	text = text.encode('utf-8')
+	searchJson = json.loads(text)
+	#print searchJson
+
+	#gets collection
+
+	results_per_page = searchJson['pagination']['per_page']
+	#print results_per_page
+
+	num_pages = searchJson['pagination']['pages'] + 1
+	#print num_pages
+
+	#now go through each page
+	data = []
+
+	counter = 0
+
+	for page_number in xrange(0,num_pages):
+		url = 'https://api.discogs.com/users/' + discogsUser + '/collection/folders/0/releases?per_page=' + str(results_per_page) + '&page=' + str(page_number)
+		print 'Doing ' + url
+		r = requests.get(url,headers=headers)
+		text = r.text
+		text = text.encode('utf-8')
+
+		#now we have a list of releases, we can pull out the artists
+		searchJson = json.loads(text)
+
+		num_releases = len(searchJson['releases'])
+
+		for x in xrange(0,num_releases):
+			num_artists =  len(searchJson['releases'][x]['basic_information']['artists'])
+			#get all artists 
+			for y in xrange(0,num_artists):
+				artist = searchJson['releases'][x]['basic_information']['artists'][y]['name']
+				if artist is 'Various':
+					pass
+				if artist is 'Unknown Artist':
+					pass
+				data.append(artist)
+		
+
+	total = dict(Counter(data))
+
+	#sorted_x = sorted(total.items(), key=operator.itemgetter(1))
+
+	for x in total:
+		artist = str(x.encode('utf-8'))
+
+		artist = re.sub(r'\(.*?\)', '',artist) #removes the (19) at the end of some artists
+		artist = artist.replace("&","and")
+		artist = artist.replace("'","")
+
+		count = str(total[x])
+
+		key = hashlib.md5(userName + artist).hexdigest()
+		print userName,discogsUser,artist,count,key
+
+		counter += 1
+
+
+
+		
+
+		try:
+			insert = db_insert("INSERT INTO discogs_collection (user,discogs_user,artist,count,the_key) VALUES (%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,discogsUser,artist,count,key))
+			print "Inserted for " + artist
+
+		except Exception as e:
+			print e
+
+
+	return "We picked out " + str(counter) + " artists from your Discogs collection"
 
 	
 

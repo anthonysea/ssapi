@@ -108,7 +108,7 @@ def login_email(api_key):
 	#now check the database
 	cursor = mysql.connect().cursor()
 	try:
-		results = cursor.execute("SELECT * FROM users WHERE email=%s and password=%s",(email,password))
+		results = cursor.execute("SELECT name,oauth_uid FROM users WHERE email=%s and password=%s",(email,password))
 	except Exception as e:
 		return "Failed to run db query for login email: " + str(e)
 
@@ -584,8 +584,32 @@ def update_recommendations(api_key,user,stage):
 		number_of_items = 3
 
 
-	getReleases = db_select("""SELECT release_artists.release_id,release_artists.artists,releases.date FROM release_artists INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists INNER JOIN releases_all releases ON releases.id=release_artists.release_id LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=auhr.user WHERE auhr.user=%s AND datediff(now(),releases.date) <= %s AND recommendations.release_id IS NULL AND release_artists.artists!='Various Artists'
-								GROUP BY release_artists.artists ORDER BY auhr.count DESC LIMIT 0,""" + str(number_of_items) + """""",(userName,date_diff))
+	getReleases = db_select("""SELECT * FROM
+(SELECT release_artists.release_id,release_artists.artists as artist,releases.date ,releases.remixers,auhr.count
+FROM release_artists 
+INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists 
+INNER JOIN releases_all releases ON releases.id=release_artists.release_id 
+LEFT JOIN recommendations ON recommendations.release_id=releases.id 
+AND recommendations.user=auhr.user 
+WHERE auhr.user=%s 
+AND datediff(now(),releases.date) <= %s
+AND recommendations.release_id IS NULL 
+AND release_artists.artists!='Various Artists'
+UNION ALL
+SELECT remixers.release_id,remixers.artist as artist,releases.date,releases.remixers,auhr.count
+FROM remixers
+INNER JOIN artists_user_has_recd auhr ON auhr.artist=remixers.artist 
+INNER JOIN releases_all releases ON releases.id=remixers.release_id
+LEFT JOIN recommendations ON recommendations.release_id=releases.id 
+AND recommendations.user=auhr.user 
+WHERE auhr.user=%s
+AND datediff(now(),releases.date) <= %s
+AND recommendations.release_id IS NULL 
+AND remixers.artist!='Various Artists'
+) as deets
+GROUP BY release_id
+ORDER BY count DESC 
+LIMIT 0,""" + str(number_of_items) + """""",(userName,date_diff,userName,date_diff))
 	dataReleases = getReleases.fetchall()
 	count = 0
 

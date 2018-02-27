@@ -12,8 +12,40 @@ the_api_key = config.api_key
 from functions import db_insert,db_select
 
 
+###############Check All Stock
+@app.route('/api/v1.0/<int:api_key>/stock/release/<string:release_id>',methods=['GET'])
+def get_stock(api_key,release_id):
+    if str(api_key)!=the_api_key:
+        abort(401)
+
+    #######get mappings
+    try:
+        query = db_insert('SELECT * FROM store_mappings WHERE release_id=%s',(release_id,))
+        
+    except Exception as e:
+        return str(e)
+
+    details = []
+    data = query.fetchall()
+    
+    for row in data:
+        store = row[2]
+        store_release_id = row[5]
+        api_url = 'https://api.soundshelter.net/api/v1.0/%s/scrape/%s/release/%s' % (api_key,store,store_release_id)
+        details.append({'store':store,'store_release_id':store_release_id,'api_url':api_url})
+
+    api_url = 'https://api.soundshelter.net/api/v1.0/%s/scrape/%s/release/%s' % (api_key,'juno',release_id)
+    details.append({'store':'juno','store_release_id':release_id,'api_url':api_url})
+
+
+    
+
+    return jsonify(details)
+        
+
+
 ###############Juno
-@app.route('/api/v1.0/<int:api_key>/scrape/juno/<int:release_id>',methods=['GET'])
+@app.route('/api/v1.0/<int:api_key>/scrape/juno/release/<int:release_id>',methods=['GET'])
 def scrape_juno(api_key,release_id):
     if str(api_key)!=the_api_key:
         abort(401)
@@ -62,6 +94,14 @@ def define_hard_wax_bis_url(api_key):
     x = get_hard_wax(base_url)
     return x
 
+@app.route('/api/v1.0/<int:api_key>/scrape/hardwax/<string:term>',methods=['GET'])
+def define_hard_wax_term_url(api_key,term):
+    if str(api_key)!=the_api_key:
+        return 401
+    base_url = 'https://hardwax.com/' + term + '/?paginate_by=500'
+    x = get_hard_wax(base_url)
+    return x
+
 
 @app.route('/api/v1.0/<int:api_key>/scrape/hardwax/release/<string:hardwax_id>',methods=['GET'])
 def get_hard_wax_release(api_key,hardwax_id):
@@ -84,7 +124,7 @@ def get_hard_wax_release(api_key,hardwax_id):
 
     
 
-
+######scrapes everything on a page
 def get_hard_wax(base_url):
 
     ####now get the HTML

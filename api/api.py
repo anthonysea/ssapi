@@ -26,9 +26,7 @@ import re
 import config
 the_api_key = config.api_key
 
-#####scrape library
-from scrapes import *
-from functions import db_select,db_insert
+
 
 
 reload(sys)
@@ -50,6 +48,10 @@ app.config['MYSQL_DATABASE_PASSWORD'] = config.password
 app.config['MYSQL_DATABASE_DB'] = config.database
 app.config['MYSQL_DATABASE_HOST'] = config.host
 
+#####scrape library
+from scrapes import *
+from functions import db_select,db_insert
+
 
 
 
@@ -60,6 +62,17 @@ app.config['MYSQL_DATABASE_HOST'] = config.host
 @app.route('/index/')
 def index():
     return render_template('index.html')
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'That an invalid method - check https://api.soundshelter.net for a list of valid methods'}), 404)
+
+
+
+@app.errorhandler(401)
+def unauthorized(error):
+    return make_response(jsonify({'error': 'Unauthorized access - invalid API key'}), 401)
 
 
 #############login in email#######################
@@ -707,15 +720,7 @@ def import_discogs(api_key,user,discogs_user):
 
 
 
-@app.errorhandler(404)
-def not_found(error):
-    return make_response(jsonify({'error': 'That an invalid method - check https://api.soundshelter.net for a list of valid methods'}), 404)
 
-
-
-@app.errorhandler(401)
-def unauthorized(error):
-    return make_response(jsonify({'error': 'Unauthorized access - invalid API key'}), 401)
 
 
 if __name__ == '__main__':

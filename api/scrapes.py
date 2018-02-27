@@ -9,7 +9,7 @@ app.config.from_object('config')
 the_api_key = config.api_key
 
 #####database functions
-from functions import *
+from functions import db_insert,db_select
 
 
 ###############Juno
@@ -24,7 +24,12 @@ def scrape_juno(api_key,release_id):
     stock = pricing_html.find("em").text
     price = str(pricing_html.find("span","product-price").text)
 
-    return jsonify({'price': price,'stock': stock}), 201
+    if 'Out of stock' in stock:
+        stock = 'false'
+    else:
+        stock = 'true'
+
+    return jsonify({'price': price,'in_stock': stock}), 201
 
 
 

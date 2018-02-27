@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from flask import Flask, request, render_template, jsonify,abort, make_response
 import config
 import decimal
+import json
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -38,9 +39,20 @@ def get_stock(api_key,release_id):
     details.append({'store':'juno','store_release_id':release_id,'api_url':api_url})
 
 
+    stock_output = []
+    for release in details:
+        check_url = release['api_url']
+        try:
+            r = requests.get(check_url)
+        except Exception as e:
+            return str(e)
+
+        stock_output.append(json.loads(r.text))
+
+
     
 
-    return jsonify(details)
+    return jsonify(stock_output)
         
 
 
@@ -55,13 +67,14 @@ def scrape_juno(api_key,release_id):
     pricing_html = soup.find("div","product-pricing")
     stock = pricing_html.find("em").text
     price = str(pricing_html.find("span","product-price").text)
+    cart_url = 'https://www.juno.co.uk/cart/add/' + str(release_id) + '/01/'
 
     if 'Out of stock' in stock:
         stock = 'false'
     else:
         stock = 'true'
 
-    return jsonify({'price': price,'in_stock': stock}), 201
+    return jsonify({'store':'juno','price': price,'in_stock': stock,'cart_url':cart_url}), 201
 
 
 
@@ -116,11 +129,13 @@ def get_hard_wax_release(api_key,hardwax_id):
 
     soup = BeautifulSoup(r.text, "lxml")
     stock_details = soup.find("div","add_order").text
+
+    cart_url = 'https://hardwax.com/basket/add/' + hardwax_id
     
     if 'out of stock' in stock_details:
-        return jsonify({'in_stock':'false','url':base_url})
+        return jsonify({'store':'hardwax','in_stock':'false','cart_url':cart_url})
     else:
-        return jsonify({'in_stock':'true','url':base_url})
+        return jsonify({'store':'hardwax','in_stock':'true','cart_url':cart_url})
 
     
 

@@ -26,7 +26,9 @@ import re
 import config
 the_api_key = config.api_key
 
-
+#####scrape library
+from scrapes import *
+from functions import db_select,db_insert
 
 
 reload(sys)
@@ -47,13 +49,6 @@ app.config['MYSQL_DATABASE_USER'] = config.user
 app.config['MYSQL_DATABASE_PASSWORD'] = config.password
 app.config['MYSQL_DATABASE_DB'] = config.database
 app.config['MYSQL_DATABASE_HOST'] = config.host
-
-
-
-#####scrape library
-from scrapes import *
-from functions import *
-
 
 
 

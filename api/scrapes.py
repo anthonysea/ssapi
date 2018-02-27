@@ -9,7 +9,7 @@ app.config.from_object('config')
 the_api_key = config.api_key
 
 #####database functions
-from functions import *
+from functions import db_select,db_insert
 
 
 ###############Juno

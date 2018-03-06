@@ -63,7 +63,7 @@ def scrape_juno(api_key,release_id):
     if str(api_key)!=the_api_key:
         abort(401)
     juno_url = 'https://www.juno.co.uk/products/' + str(release_id) + '-01'
-    r = requests.get(juno_url)
+    r = requests.get(juno_url,timeout=5)
     soup = BeautifulSoup(r.text, "lxml")
     pricing_html = soup.find("div","product-pricing")
     stock = pricing_html.find("em").text
@@ -124,7 +124,7 @@ def get_hard_wax_release(api_key,hardwax_id):
     base_url = 'https://hardwax.com/' + str(hardwax_id)
     ####now get the HTML
     try:
-        r = requests.get(base_url)
+        r = requests.get(base_url,timeout=5)
     except Exception as e:
         return "Failed to request the Hardwax URL " + base_url, 405
 
@@ -140,29 +140,7 @@ def get_hard_wax_release(api_key,hardwax_id):
 
 
 
-@app.route('/api/v1.0/<int:api_key>/scrape/rushhour/release/<string:rushhour_id>',methods=['GET'])
-def get_rushhour_release(api_key,rushhour_id):
-    if str(api_key)!=the_api_key:
-        return 401
-    base_url = 'http://www.rushhour.nl/store_detailed.php?item=' + rushhour_id
-    ####now get the HTML
-    try:
-        r = requests.get(base_url)
-    except Exception as e:
-        return "Failed to request the Rush Hour URL " + base_url, 405
 
-    soup = BeautifulSoup(r.text, "lxml")
-    stock_details = soup.findAll("img",class_="cart_icon")
-    print(stock_details)
-
-    cart_url = 'http://www.rushhour.nl/store_detailed.php?action=add&item=' + rushhour_id
-
-    if len(stock_details) > 0:
-        return jsonify({'store':'rushhour','in_stock':'true','cart_url':cart_url})
-    else:
-        return jsonify({'store':'rushhour','in_stock':'false','cart_url':cart_url})
-
-    
 
     
 
@@ -171,7 +149,7 @@ def get_hard_wax(base_url):
 
     ####now get the HTML
     try:
-        r = requests.get(base_url)
+        r = requests.get(base_url,timeout=5)
     except Exception as e:
         return "Failed to request the Hardwax URL " + base_url, 405
 
@@ -235,7 +213,7 @@ def get_rush_hour_index(api_key):
 
     ####now get the HTML
     try:
-        r = requests.get(base_url)
+        r = requests.get(base_url,timeout=5)
     except Exception as e:
         return "Failed to request the Rush Hour URL " + base_url, 405
 
@@ -288,12 +266,30 @@ def get_rush_hour_index(api_key):
             print(str(e))
             continue
         
-
-
-
-        
-
     return base_url,201
+
+
+@app.route('/api/v1.0/<int:api_key>/scrape/rushhour/release/<string:rushhour_id>',methods=['GET'])
+def get_rushhour_release(api_key,rushhour_id):
+    if str(api_key)!=the_api_key:
+        return 401
+    base_url = 'http://www.rushhour.nl/store_detailed.php?item=' + rushhour_id
+    ####now get the HTML
+    try:
+        r = requests.get(base_url, timeout=5)
+    except Exception as e:
+        return "Failed to request the Rush Hour URL " + base_url, 405
+
+    soup = BeautifulSoup(r.text, "lxml")
+    stock_details = soup.findAll("img",class_="cart_icon")
+    print(stock_details)
+
+    cart_url = 'http://www.rushhour.nl/store_detailed.php?action=add&item=' + rushhour_id
+
+    if len(stock_details) > 0:
+        return jsonify({'store':'rushhour','in_stock':'true','cart_url':cart_url})
+    else:
+        return jsonify({'store':'rushhour','in_stock':'false','cart_url':cart_url})
 
 
 

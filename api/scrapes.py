@@ -138,7 +138,6 @@ def get_hard_wax_release(api_key,hardwax_id):
         return jsonify({'store':'hardwax','in_stock':'true','cart_url':cart_url})
 
     
-
 ######scrapes everything on a page
 def get_hard_wax(base_url):
 

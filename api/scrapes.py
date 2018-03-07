@@ -6,6 +6,9 @@ import decimal
 import json
 import re
 from selenium import webdriver
+import os
+
+
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -13,6 +16,8 @@ the_api_key = config.api_key
 
 #####database functions
 from functions import db_insert,db_select
+
+
 
 
 ###############Check All Stock
@@ -212,6 +217,11 @@ def get_rush_hour_index(api_key):
         return 401
     base_url = 'http://www.rushhour.nl/store_master.php?idxGroup=2&idxGenre=2&idxSubGenre=&app=1'
 
+    #for selenium
+    geckodriver_log_location = os.path.join(app.root_path, 'logs', 'geckodriver.log')
+    print(geckodriver_log_location)
+    # return geckodriver_log_location
+
     ####now get the HTML
     try:
         r = requests.get(base_url,timeout=5)
@@ -219,7 +229,7 @@ def get_rush_hour_index(api_key):
         return "Failed to request the Rush Hour URL " + base_url, 405
 
     #need to use selenium because of the popup
-    browser = webdriver.Firefox(log_path="/var/www/ssapi/logs/geckodriver.log")
+    browser = webdriver.Firefox(log_path=geckodriver_log_location)
     browser.get(base_url)
     try:
         alert = browser.switch_to_alert()

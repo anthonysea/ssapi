@@ -217,9 +217,11 @@ def get_rush_hour_index(api_key):
     except Exception as e:
         return "Failed to request the Rush Hour URL " + base_url, 405
 
-    return r.text
 
-    # soup = BeautifulSoup(r.text, "lxml")
+
+    soup = BeautifulSoup(r.text, "lxml")
+
+    return soup
 
     
 

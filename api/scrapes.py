@@ -248,10 +248,6 @@ def get_rush_hour_index(api_key):
 
     soup = BeautifulSoup(html, "lxml")
 
-    
-
-    
-
     for product in soup.find_all("div","item_wrap1"):
         details = str()
         label_html = str()
@@ -305,13 +301,33 @@ def get_rushhour_release(api_key,rushhour_id):
     if str(api_key)!=the_api_key:
         return 401
     base_url = 'http://www.rushhour.nl/store_detailed.php?item=' + rushhour_id
+    
+    #for selenium
+    display = Display(visible=0, size=(800, 600))
+    display.start()
+    geckodriver_log_location = os.path.join(app.root_path, 'logs', 'geckodriver.log')
+    print(geckodriver_log_location)
+    # return geckodriver_log_location
+
     ####now get the HTML
     try:
-        r = requests.get(base_url, timeout=5)
+        r = requests.get(base_url,timeout=5)
     except Exception as e:
         return "Failed to request the Rush Hour URL " + base_url, 405
 
-    soup = BeautifulSoup(r.text, "lxml")
+    #need to use selenium because of the popup
+    browser = webdriver.Firefox(log_path=geckodriver_log_location)
+    browser.get(base_url)
+    try:
+        alert = browser.switch_to_alert()
+        alert.accept()
+        print "alert accpted"
+    except:
+        print "no alert"
+    html = browser.page_source
+    browser.close()
+
+    soup = BeautifulSoup(html, "lxml")
     stock_details = soup.findAll("img",class_="cart_icon")
     print(stock_details)
 

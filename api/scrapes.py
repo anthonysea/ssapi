@@ -226,7 +226,6 @@ def get_rush_hour_index(api_key):
     html = browser.page_source
     browser.close()
 
-
     soup = BeautifulSoup(html, "lxml")
 
     for product in soup.find_all("div","item_wrap1"):

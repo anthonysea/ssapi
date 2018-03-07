@@ -5,6 +5,8 @@ import config
 import decimal
 import json
 import re
+#for selenium
+from pyvirtualdisplay import Display
 from selenium import webdriver
 import os
 
@@ -218,6 +220,8 @@ def get_rush_hour_index(api_key):
     base_url = 'http://www.rushhour.nl/store_master.php?idxGroup=2&idxGenre=2&idxSubGenre=&app=1'
 
     #for selenium
+    display = Display(visible=0, size=(800, 600))
+    display.start()
     geckodriver_log_location = os.path.join(app.root_path, 'logs', 'geckodriver.log')
     print(geckodriver_log_location)
     # return geckodriver_log_location

@@ -221,6 +221,11 @@ def get_rush_hour_index(api_key):
 
     soup = BeautifulSoup(r.text, "lxml")
 
+    for script in soup(["script", "style"]):
+        script.decompose()    # rip it out
+
+    
+
     return soup
 
     

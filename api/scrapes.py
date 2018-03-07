@@ -211,11 +211,13 @@ def get_rush_hour_index(api_key):
         return 401
     base_url = 'http://www.rushhour.nl/store_master.php?idxGroup=2&idxGenre=2&idxSubGenre=&app=1'
 
-    # ####now get the HTML
-    # try:
-    #     r = requests.get(base_url,timeout=1)
-    # except Exception as e:
-    #     return "Failed to request the Rush Hour URL " + base_url, 405
+    ####now get the HTML
+    try:
+        r = requests.get(base_url,timeout=1)
+    except Exception as e:
+        return "Failed to request the Rush Hour URL " + base_url, 405
+
+    return r.text
 
     # soup = BeautifulSoup(r.text, "lxml")
 

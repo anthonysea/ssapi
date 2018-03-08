@@ -5,6 +5,7 @@ import config
 import decimal
 import json
 import re
+import datetime
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -23,13 +24,13 @@ def get_stock(api_key,release_id):
     #######get mappings
     try:
         query = db_insert('SELECT * FROM store_mappings WHERE release_id=%s',(release_id,))
-        
+
     except Exception as e:
         return str(e)
 
     details = []
     data = query.fetchall()
-    
+
     for row in data:
         store = row[2]
         store_release_id = row[5]
@@ -51,10 +52,10 @@ def get_stock(api_key,release_id):
         stock_output.append(json.loads(r.text))
 
 
-    
+
 
     return jsonify(stock_output)
-        
+
 
 
 ###############Juno
@@ -132,7 +133,7 @@ def get_hard_wax_release(api_key,hardwax_id):
     stock_details = soup.find("div","add_order").text
 
     cart_url = 'https://hardwax.com/basket/add/' + hardwax_id
-    
+
     if 'out of stock' in stock_details:
         return jsonify({'store':'hardwax','in_stock':'false','cart_url':cart_url})
     else:
@@ -142,7 +143,7 @@ def get_hard_wax_release(api_key,hardwax_id):
 
 
 
-    
+
 
 ######scrapes everything on a page
 def get_hard_wax(base_url):
@@ -181,7 +182,7 @@ def get_hard_wax(base_url):
         split_release_url = release_url.split('/')
         store_release_id =  str(split_release_url[1])
         print(store_release_id)
-        
+
         if len(store_release_id)<1:
             print('Didnt get the store id - skip')
             continue
@@ -190,7 +191,7 @@ def get_hard_wax(base_url):
             print('skipping ' + title + ' or ' + label + ' as less than 3 characters')
             continue
 
-        
+
         #sql = ('SELECT id FROM releases_all WHERE label_no_country LIKE %s AND title LIKE %s') % ('%' + label + '%','%' + title + '%')
         try:
             query = db_insert('INSERT INTO store_mappings (release_id,store,store_url,unique_key,store_release_id) SELECT id,%s,%s, md5(concat(id,%s)),%s FROM releases_all WHERE label_no_country LIKE %s AND title LIKE %s ON DUPLICATE KEY UPDATE store_url=values(store_url),store_release_id=values(store_release_id)', ('hardwax',release_url,'hardwax',store_release_id,label + '%','%' + title + '%'))
@@ -199,8 +200,8 @@ def get_hard_wax(base_url):
         except Exception as e:
             print(str(e))
             continue
-        
-        
+
+
     return base_url,201
 
 
@@ -209,8 +210,10 @@ def get_hard_wax(base_url):
 def get_rush_hour_index(api_key):
     if str(api_key)!=the_api_key:
         return 401
-    base_url = 'http://www.rushhour.nl/store_master.php?idxGroup=2&idxGenre=2&idxSubGenre=&app=1'
 
+    this_week = datetime.datetime.utcnow().isocalendar()[1]
+    this_year = datetime.datetime.utcnow().year
+    base_url = 'http://www.rushhour.nl/store_master.php?numYear=%s&numWeek=%s&bIsOutOfStock=1&idxGenre=&app=250' % (this_year, this_week)
     ####now get the HTML
     try:
         r = requests.get(base_url,timeout=5)
@@ -219,7 +222,7 @@ def get_rush_hour_index(api_key):
 
     soup = BeautifulSoup(r.text, "lxml")
 
-    
+
 
     for product in soup.find_all("div","item_wrap1"):
         details = str()
@@ -232,10 +235,10 @@ def get_rush_hour_index(api_key):
         title = str()
         release_url = str()
 
-        
+
 
         the_release = product.find("div","item_content")
-        
+
         all_details = the_release.find("h2","title")
         #print all_details
         release_url = all_details.findAll("a")[0]['href']
@@ -256,7 +259,7 @@ def get_rush_hour_index(api_key):
             print('skipping ' + title + ' or ' + label + ' as less than 3 characters')
             continue
 
-        
+
         #sql = ('SELECT id FROM releases_all WHERE label_no_country LIKE %s AND title LIKE %s') % ('%' + label + '%','%' + title + '%')
         try:
             query = db_insert('INSERT INTO store_mappings (release_id,store,store_url,unique_key,store_release_id) SELECT id,%s,%s, md5(concat(id,%s)),%s FROM releases_all WHERE label_no_country LIKE %s AND title LIKE %s ON DUPLICATE KEY UPDATE store_url=values(store_url),store_release_id=values(store_release_id)', ('rushhour','/' + release_url,'rushhour',store_release_id,label + '%','%' + title + '%'))
@@ -265,7 +268,7 @@ def get_rush_hour_index(api_key):
         except Exception as e:
             print(str(e))
             continue
-        
+
     return base_url,201
 
 

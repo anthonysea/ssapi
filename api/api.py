@@ -381,9 +381,13 @@ def update_recommendations(api_key,user,stage):
 
 	start_time = time.time()
 
+
 	#now store the labels: These are the labels that the artists in AUHR have appeared on more than twice
 	try:
-		getLabels = db_select('''SELECT label,sum(cnt) as cnt
+		getLabels = db_select('''
+			INSERT INTO labels_user_has_recd 
+			(user,label,the_key,count) 
+			SELECT %s,label,md5(concat(%s,label)), sum(cnt) as cnt
 			FROM (
 			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 5 as cnt
 				FROM releases_all releases
@@ -423,35 +427,29 @@ def update_recommendations(api_key,user,stage):
 				FROM label_love ll
 				WHERE ll.user=%s
 				GROUP BY ll.label
-			UNION ALL
-			SELECT releases.label_no_country as label,COUNT(releases.label_no_country) * 8 as cnt
-				FROM discogs_collection
-				INNER JOIN
-				release_artists ra
-				ON ra.artists=discogs_collection.artist
-				INNER JOIN
-				releases ON releases.id=ra.release_id
-				WHERE discogs_collection.user=%s
-				GROUP BY releases.label_no_country
+			
 			) as deets
-			WHERE cnt > 0
+			WHERE cnt > 5
 			AND label!='unknown Label'
 			GROUP BY label
 			ORDER BY cnt DESC
-			LIMIT 0,50''',(userName,userName,userName,userName,userName,userName))
+			#LIMIT 0,150
+			ON DUPLICATE KEY UPDATE count=VALUES(count)''',(userName,userName,userName,userName,userName,userName,userName))
 
 	except Exception as e:
 		print(str(e)) + " - the error is in the label calculation"
+		return str(e) + " - the error is in the label calculation"
 
+	
 
-	dataLabels = getLabels.fetchall()
+	# dataLabels = getLabels.fetchall()
 
-	for labelRow in dataLabels:
-		label = str(labelRow[0])
-		count = str(labelRow[1])
-		print(label + ': ' + count)
-		key = hashlib.md5(userName + label).hexdigest()
-		insertLabel = db_insert("INSERT INTO labels_user_has_recd (user,label,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key),count=VALUES(count)",(userName,label,key,count))
+	# for labelRow in dataLabels:
+	# 	label = str(labelRow[0])
+	# 	count = str(labelRow[1])
+	# 	print(label + ': ' + count)
+	# 	key = hashlib.md5(userName + label).hexdigest()
+	# 	insertLabel = db_insert("INSERT INTO labels_user_has_recd (user,label,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key),count=VALUES(count)",(userName,label,key,count))
 
 	#now we find releases that are by those artists
 	if stage=='onboarding':
@@ -480,7 +478,11 @@ def update_recommendations(api_key,user,stage):
 
 	#######################now do the artists_user_has_recd
 
-	sql = """SELECT artist,sum(cnt) as cnt FROM
+	sql = """
+			INSERT INTO artists_user_has_recd 
+			(user,artist,the_key,count) 
+			SELECT %s,artist,md5(concat(%s,artist)),sum(cnt) as cnt 
+			FROM
 			(SELECT DISTINCT similar.similar_artist as artist,COUNT(similar.similar_artist) as cnt FROM release_artists INNER JOIN charts_extended ON charts_extended.release_id=release_artists.release_id INNER JOIN similar ON release_artists.artists=similar.artist INNER JOIN users ON users.name=charts_extended.artist WHERE users.name=%s GROUP BY similar.similar_artist HAVING COUNT(similar.similar_artist) > 0 UNION all
 				SELECT DISTINCT release_artists.artists as artist ,COUNT(release_artists.artists) * 20 as cnt FROM release_artists INNER JOIN charts_extended ce ON ce.release_id=release_artists.release_id
 				WHERE ce.artist=%s GROUP by release_artists.artists HAVING COUNT(release_artists.artists) > 0
@@ -538,24 +540,29 @@ def update_recommendations(api_key,user,stage):
 			WHERE cnt > 0
 			GROUP by artist
 			ORDER BY cnt DESC
-			LIMIT 0,150
+			#LIMIT 0,150
+			ON DUPLICATE KEY UPDATE count=VALUES(count)
 			"""
 
 
 	#get the similar artists that appear more than once
-	getRecs = db_select(sql,(userName,userName,userName,userName,userName,userName,userName,userName,userName,userName,userName))
+	try:
+		getRecs = db_select(sql,(userName,userName,userName,userName,userName,userName,userName,userName,userName,userName,userName,userName,userName))
+	except Exception as e:
+		print(str(e))
+		print "Failed on AUHR insert"
 
-	dataArtists = getRecs.fetchall()
-	for artistRow in dataArtists:
-		artist = str(artistRow[0])
-		count = str(artistRow[1])
-		key = None
+	# dataArtists = getRecs.fetchall()
+	# for artistRow in dataArtists:
+	# 	artist = str(artistRow[0])
+	# 	count = str(artistRow[1])
+	# 	key = None
 
-		key = hashlib.md5(userName + artist).hexdigest()
+	# 	key = hashlib.md5(userName + artist).hexdigest()
 
-		#now insert this into the artists_user_has_recd
-		insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
-		print("inserted " + artist + " for " + userName)
+	# 	#now insert this into the artists_user_has_recd
+	# 	insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
+	# 	print("inserted " + artist + " for " + userName)
 
 	#now we find releases that are by those artists
 	if stage=='onboarding':

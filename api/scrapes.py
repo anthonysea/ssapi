@@ -244,6 +244,9 @@ def get_rush_hour_index(api_key):
     html = browser.page_source
     browser.close()
 
+
+    display.sendstop()
+
    
 
     soup = BeautifulSoup(html, "lxml")
@@ -326,6 +329,8 @@ def get_rushhour_release(api_key,rushhour_id):
         print "no alert"
     html = browser.page_source
     browser.close()
+
+    display.sendstop()
 
     soup = BeautifulSoup(html, "lxml")
     stock_details = soup.findAll("img",class_="cart_icon")

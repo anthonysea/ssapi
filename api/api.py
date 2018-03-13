@@ -372,6 +372,8 @@ def update_recommendations(api_key,user,stage):
 	userName = str(user)
 	stage = str(stage)
 
+	print(userName,stage)
+
 	if stage=='onboarding':
 		date_diff=360
 		#and delete the existing recommendations

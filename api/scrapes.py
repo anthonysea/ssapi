@@ -217,7 +217,8 @@ def get_hard_wax(base_url):
 def get_rush_hour_index(api_key):
     if str(api_key)!=the_api_key:
         return 401
-    base_url = 'http://www.rushhour.nl/store_master.php?idxGroup=2&idxGenre=2&idxSubGenre=&app=2500'
+    #base_url = 'http://www.rushhour.nl/store_master.php?idxGroup=2&idxGenre=2&idxSubGenre=&app=250'
+    base_url = 'http://www.rushhour.nl/store_master.php?blNew=1&bIsOutOfStock=1&numYear=%s&numWeek=%s&app=250' % ('2018','11')
 
     #for selenium
     display = Display(visible=0, size=(800, 600))

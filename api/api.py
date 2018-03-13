@@ -461,7 +461,7 @@ def update_recommendations(api_key,user,stage):
 
 
 	#now we find releases that are on these labels
-	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country  LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=luhr.user WHERE luhr.user=%s AND datediff(now(),releases.date) <= %s GROUP BY releases.label_no_country ORDER BY luhr.count DESC LIMIT 0," + str(number_of_items) + "",(userName,date_diff))
+	getReleases = db_select("SELECT releases.label_no_country, releases.id,releases.label_no_country,releases.date,releases.label_no_country FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country  LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=luhr.user WHERE luhr.user=%s AND datediff(now(),releases.date) <= %s GROUP BY releases.label_no_country ORDER BY luhr.count DESC LIMIT 0," + str(number_of_items) + "",(userName,date_diff))
 	dataReleases = getReleases.fetchall()
 	count =0
 
@@ -471,7 +471,7 @@ def update_recommendations(api_key,user,stage):
 
 	for releasesRow in dataReleases:
 
-		releaseId = str(releasesRow[0])
+		releaseId = str(releasesRow[1])
 		key = hashlib.md5(userName + releaseId).hexdigest()
 		insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
 		count = count + 1
@@ -479,6 +479,8 @@ def update_recommendations(api_key,user,stage):
 
 
 	#######################now do the artists_user_has_recd
+	print("Done the labels part")
+	print("Now doing the artists")
 
 	sql = """
 			INSERT INTO artists_user_has_recd 

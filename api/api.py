@@ -373,6 +373,7 @@ def update_recommendations(api_key,user,stage):
 	stage = str(stage)
 
 	print(userName,stage)
+	insert_ids_list = []
 
 	if stage=='onboarding':
 		date_diff=360
@@ -477,6 +478,7 @@ def update_recommendations(api_key,user,stage):
 		insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
 		count = count + 1
 		print("inserted " + releaseId)
+		insert_ids_list.append(releaseId)
 
 
 	#######################now do the artists_user_has_recd
@@ -604,6 +606,8 @@ LIMIT 0,""" + str(number_of_items) + """""",(userName,date_diff,userName,date_di
 
 				print("inserted " + releaseId)
 
+				insert_ids_list.append(releaseId)
+
 
 
 
@@ -612,7 +616,10 @@ LIMIT 0,""" + str(number_of_items) + """""",(userName,date_diff,userName,date_di
 
 
 	#display time taken to run script
-	return("--- %s seconds ---" % (time.time() - start_time) + ' for ' + userName)
+	#return("--- %s seconds ---" % (time.time() - start_time) + ' for ' + userName, len(insert_ids_list))
+	num_recs_inserted = str(len(insert_ids_list))
+	print(num_recs_inserted)
+	return num_recs_inserted + ' inserted for ' + userName
 
 
 #############import from Discogs##################

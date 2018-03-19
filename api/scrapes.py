@@ -22,8 +22,6 @@ the_api_key = config.api_key
 from functions import db_insert,db_select
 
 
-
-
 ###############Check All Stock
 @app.route('/api/v1.0/<int:api_key>/stock/release/<string:release_id>',methods=['GET'])
 def get_stock(api_key,release_id):
@@ -251,11 +249,8 @@ def get_rush_hour_index(api_key):
         print "no alert"
     html = browser.page_source
     browser.close()
-
-
     display.sendstop()
-
-
+    browser.quit()
 
     soup = BeautifulSoup(html, "lxml")
 
@@ -337,8 +332,9 @@ def get_rushhour_release(api_key,rushhour_id):
         print "no alert"
     html = browser.page_source
     browser.close()
-
+    browser.quit()
     display.sendstop()
+
 
     soup = BeautifulSoup(html, "lxml")
     stock_details = soup.findAll("img",class_="cart_icon")

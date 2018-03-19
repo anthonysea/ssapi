@@ -353,7 +353,18 @@ def get_rushhour_release(api_key,rushhour_id):
 
 
 
+#######################deejay.de
+def get_deejay_all():
+    base_url = 'https://www.deejay.de/m_All/sm_News/sort_voe/perpage_180'
+    try:
+        r = requests.get(base_url,timeout=5)
+    except Exception as e:
+        return "Failed to grab the Deejay URL: " + base_url, 405
 
+    soup = BeautifulSoup(r.text, "lxml")
+    print(soup)
+
+    return base_url
 
 
 

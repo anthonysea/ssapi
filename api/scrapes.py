@@ -248,7 +248,6 @@ def get_rush_hour_index(api_key):
     except:
         print "no alert"
     html = browser.page_source
-    browser.close()
     display.sendstop()
     browser.quit()
 
@@ -331,7 +330,6 @@ def get_rushhour_release(api_key,rushhour_id):
     except:
         print "no alert"
     html = browser.page_source
-    browser.close()
     browser.quit()
     display.sendstop()
 

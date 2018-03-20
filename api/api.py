@@ -380,7 +380,7 @@ def update_recommendations(api_key,user,stage):
 		#and delete the existing recommendations
 		delRecs = db_insert('DELETE FROM recommendations WHERE user=%s',(userName,))
 	else:
-		date_diff=21
+		date_diff=30
 
 	start_time = time.time()
 
@@ -544,7 +544,17 @@ def update_recommendations(api_key,user,stage):
 		print(str(e))
 		print "Failed on AUHR insert"
 
-	
+	# dataArtists = getRecs.fetchall()
+	# for artistRow in dataArtists:
+	# 	artist = str(artistRow[0])
+	# 	count = str(artistRow[1])
+	# 	key = None
+
+	# 	key = hashlib.md5(userName + artist).hexdigest()
+
+	# 	#now insert this into the artists_user_has_recd
+	# 	insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
+	# 	print("inserted " + artist + " for " + userName)
 
 	#now we find releases that are by those artists
 	if stage=='onboarding':
@@ -560,14 +570,7 @@ INNER JOIN artists_user_has_recd auhr
 ON auhr.artist=release_artists.artists
 INNER JOIN releases_all releases 
 ON releases.id=release_artists.release_id
-<<<<<<< HEAD
-LEFT JOIN recommendations ON recommendations.user=auhr.user 
-AND releases.id=recommendations.release_id 
-WHERE recommendations.user IS NULL
-AND auhr.user=%s
-=======
 WHERE auhr.user=%s
->>>>>>> 2c970b446800dab232c6fa83f9309dd558edf030
 AND release_artists.artists!='Various Artists'
 AND datediff(now(),date) <= %s
 UNION ALL

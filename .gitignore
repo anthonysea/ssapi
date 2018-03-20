@@ -1,5 +1,5 @@
 config.py
 *pyc
 fabfile.py
-venv
-api/venv
+venv/*
+api/venv/*

@@ -372,12 +372,15 @@ def update_recommendations(api_key,user,stage):
 	userName = str(user)
 	stage = str(stage)
 
+	print(userName,stage)
+	insert_ids_list = []
+
 	if stage=='onboarding':
 		date_diff=360
 		#and delete the existing recommendations
 		delRecs = db_insert('DELETE FROM recommendations WHERE user=%s',(userName,))
 	else:
-		date_diff=30
+		date_diff=21
 
 	start_time = time.time()
 
@@ -426,14 +429,15 @@ def update_recommendations(api_key,user,stage):
 			SELECT DISTINCT ll.label,COUNT(ll.id) * 100 as cnt
 				FROM label_love ll
 				WHERE ll.user=%s
+				AND ll.source!='onboarding'
 				GROUP BY ll.label
 			
 			) as deets
-			WHERE cnt > 5
+			WHERE cnt > 10
 			AND label!='unknown Label'
 			GROUP BY label
 			ORDER BY cnt DESC
-			#LIMIT 0,150
+			
 			ON DUPLICATE KEY UPDATE count=VALUES(count)''',(userName,userName,userName,userName,userName,userName,userName))
 
 	except Exception as e:
@@ -459,7 +463,7 @@ def update_recommendations(api_key,user,stage):
 
 
 	#now we find releases that are on these labels
-	getReleases = db_select("SELECT releases.id,releases.label_no_country,releases.date FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country  LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=luhr.user WHERE luhr.user=%s AND datediff(now(),releases.date) <= %s GROUP BY releases.label_no_country ORDER BY luhr.count DESC LIMIT 0," + str(number_of_items) + "",(userName,date_diff))
+	getReleases = db_select("SELECT releases.label_no_country, releases.id,releases.label_no_country,releases.date,releases.label_no_country FROM releases_all releases INNER JOIN labels_user_has_recd luhr ON luhr.label=releases.label_no_country  LEFT JOIN recommendations ON recommendations.release_id=releases.id AND recommendations.user=luhr.user WHERE luhr.user=%s AND datediff(now(),releases.date) <= %s GROUP BY releases.label_no_country ORDER BY luhr.count DESC LIMIT 0," + str(number_of_items) + "",(userName,date_diff))
 	dataReleases = getReleases.fetchall()
 	count =0
 
@@ -469,27 +473,37 @@ def update_recommendations(api_key,user,stage):
 
 	for releasesRow in dataReleases:
 
-		releaseId = str(releasesRow[0])
+		releaseId = str(releasesRow[1])
 		key = hashlib.md5(userName + releaseId).hexdigest()
-		insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
+		try:
+			insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
+		except Exception as e:
+			print(str(e))
+
 		count = count + 1
 		print("inserted " + releaseId)
+		insert_ids_list.append(releaseId)
 
 
 	#######################now do the artists_user_has_recd
+	print("Done the labels part")
+	print("Now doing the artists")
 
 	sql = """
 			INSERT INTO artists_user_has_recd 
 			(user,artist,the_key,count) 
 			SELECT %s,artist,md5(concat(%s,artist)),sum(cnt) as cnt 
 			FROM
-			(SELECT DISTINCT similar.similar_artist as artist,COUNT(similar.similar_artist) as cnt FROM release_artists INNER JOIN charts_extended ON charts_extended.release_id=release_artists.release_id INNER JOIN similar ON release_artists.artists=similar.artist INNER JOIN users ON users.name=charts_extended.artist WHERE users.name=%s GROUP BY similar.similar_artist HAVING COUNT(similar.similar_artist) > 0 UNION all
-				SELECT DISTINCT release_artists.artists as artist ,COUNT(release_artists.artists) * 20 as cnt FROM release_artists INNER JOIN charts_extended ce ON ce.release_id=release_artists.release_id
+			(
+					SELECT DISTINCT release_artists.artists as artist ,COUNT(release_artists.artists) * 20 as cnt 
+				FROM release_artists INNER JOIN charts_extended ce ON ce.release_id=release_artists.release_id
 				WHERE ce.artist=%s GROUP by release_artists.artists HAVING COUNT(release_artists.artists) > 0
 			UNION all
-				SELECT artist_love.artist as artist,'75' as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source!='onboarding'
+				SELECT artist_love.artist as artist,'75' as cnt 
+				FROM artist_love WHERE artist_love.user=%s AND artist_love.source!='onboarding'
 			UNION all
-				SELECT artist_love.artist as artist,'10' as cnt FROM artist_love WHERE artist_love.user=%s AND artist_love.source='onboarding'
+				SELECT artist_love.artist as artist,'10' as cnt 
+				FROM artist_love WHERE artist_love.user=%s AND artist_love.source='onboarding'
 			UNION all
 				SELECT `auhr`.artist, auhr.count
 				FROM artists_user_has_recd auhr WHERE auhr.user=%s AND count='20'
@@ -500,27 +514,6 @@ def update_recommendations(api_key,user,stage):
 				ON listens.release_id=release_artists.release_id
 				WHERE listens.user=%s
 				GROUP BY release_artists.artists
-			UNION all
-			-- 	SELECT similar_artist as artist,COUNT(similar.id)
-			-- 	FROM similar
-			-- 	JOIN genre_artists ga
-			-- 	ON ga.artist=similar.artist
-			-- 	JOIN genre_follows gf
-			-- 	ON gf.genre=ga.genre
-			-- 	JOIN users
-			-- 	ON users.name=gf.user
-			-- 	WHERE users.name=%s
-			-- 	GROUP BY similar.similar_artist
-			-- UNION all
-				SELECT artist,count * 30 as cnt
-				FROM discogs_collection
-				WHERE user=%s
-				AND artist!='Various'
-				AND count>1
-			UNION all
-				SELECT artist,'50'
-				FROM spotify_top_artists
-				WHERE user=%s
 			UNION ALL
 				SELECT artists as artist, COUNT(*) * 30 as cnt
 				FROM release_artists
@@ -537,32 +530,21 @@ def update_recommendations(api_key,user,stage):
 				GROUP BY release_artists.artists
 
 			) as final
-			WHERE cnt > 0
+			WHERE cnt > 11
 			GROUP by artist
 			ORDER BY cnt DESC
-			#LIMIT 0,150
 			ON DUPLICATE KEY UPDATE count=VALUES(count)
 			"""
 
 
 	#get the similar artists that appear more than once
 	try:
-		getRecs = db_select(sql,(userName,userName,userName,userName,userName,userName,userName,userName,userName,userName,userName,userName,userName))
+		getRecs = db_select(sql,(userName,userName,userName,userName,userName,userName,userName,userName,userName))
 	except Exception as e:
 		print(str(e))
 		print "Failed on AUHR insert"
 
-	# dataArtists = getRecs.fetchall()
-	# for artistRow in dataArtists:
-	# 	artist = str(artistRow[0])
-	# 	count = str(artistRow[1])
-	# 	key = None
-
-	# 	key = hashlib.md5(userName + artist).hexdigest()
-
-	# 	#now insert this into the artists_user_has_recd
-	# 	insertArtist = db_insert("INSERT INTO artists_user_has_recd (user,artist,the_key,count) VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE count=VALUES(count)",(userName,artist,key,count))
-	# 	print("inserted " + artist + " for " + userName)
+	
 
 	#now we find releases that are by those artists
 	if stage=='onboarding':
@@ -574,25 +556,24 @@ def update_recommendations(api_key,user,stage):
 	getReleases = db_select("""SELECT * FROM
 (SELECT release_artists.release_id,release_artists.artists as artist,releases.date ,releases.remixers,auhr.count
 FROM release_artists
-INNER JOIN artists_user_has_recd auhr ON auhr.artist=release_artists.artists
-INNER JOIN releases_all releases ON releases.id=release_artists.release_id
-LEFT JOIN recommendations ON recommendations.release_id=releases.id
-AND recommendations.user=auhr.user
-WHERE auhr.user=%s
-AND datediff(now(),releases.date) <= %s
-AND recommendations.release_id IS NULL
+INNER JOIN artists_user_has_recd auhr 
+ON auhr.artist=release_artists.artists
+INNER JOIN releases_all releases 
+ON releases.id=release_artists.release_id
+LEFT JOIN recommendations ON recommendations.user=auhr.user 
+AND releases.id=recommendations.release_id 
+WHERE recommendations.user IS NULL
+AND auhr.user=%s
 AND release_artists.artists!='Various Artists'
+AND datediff(now(),date) <= %s
 UNION ALL
 SELECT remixers.release_id,remixers.artist as artist,releases.date,releases.remixers,auhr.count
 FROM remixers
 INNER JOIN artists_user_has_recd auhr ON auhr.artist=remixers.artist
 INNER JOIN releases_all releases ON releases.id=remixers.release_id
-LEFT JOIN recommendations ON recommendations.release_id=releases.id
-AND recommendations.user=auhr.user
 WHERE auhr.user=%s
-AND datediff(now(),releases.date) <= %s
-AND recommendations.release_id IS NULL
 AND remixers.artist!='Various Artists'
+AND datediff(now(),date) <= %s
 ) as deets
 GROUP BY release_id
 ORDER BY count DESC
@@ -618,9 +599,15 @@ LIMIT 0,""" + str(number_of_items) + """""",(userName,date_diff,userName,date_di
 
 				releaseId = str(releasesRow[0])
 				key = hashlib.md5(userName + releaseId).hexdigest()
-				insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
+				try:
+					insertRelease = db_insert("INSERT INTO recommendations (user,release_id,the_key) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE the_key=VALUES(the_key)",(userName,releaseId,key))
+				except Exception as e:
+					print(str(e))
+					continue
 
 				print("inserted " + releaseId)
+
+				insert_ids_list.append(releaseId)
 
 
 
@@ -630,7 +617,10 @@ LIMIT 0,""" + str(number_of_items) + """""",(userName,date_diff,userName,date_di
 
 
 	#display time taken to run script
-	return("--- %s seconds ---" % (time.time() - start_time) + ' for ' + userName)
+	#return("--- %s seconds ---" % (time.time() - start_time) + ' for ' + userName, len(insert_ids_list))
+	num_recs_inserted = str(len(insert_ids_list))
+	print(num_recs_inserted)
+	return num_recs_inserted + ' inserted for ' + userName
 
 
 #############import from Discogs##################

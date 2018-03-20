@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
@@ -15,6 +16,16 @@ class deejay_scrape():
 
     def get_page(self, url):
         self.base_url = url
+=======
+import requests
+from bs4 import BeautifulSoup
+
+class deejay_scrape():
+    def __init__(self):
+        self.base_url = 'https://www.deejay.de/content.php?param=/m_All/sm_News/sort_voe/perpage_180/page_1'
+
+    def get_page(self, url):
+>>>>>>> 2c970b446800dab232c6fa83f9309dd558edf030
         print('Getting page..' + url)
         try:
             r = requests.get(url)
@@ -26,7 +37,10 @@ class deejay_scrape():
     def load_html_into_bs(self, html):
         soup = BeautifulSoup(html, "lxml")
         self.soup = soup
+<<<<<<< HEAD
         
+=======
+>>>>>>> 2c970b446800dab232c6fa83f9309dd558edf030
 
     def scrape_listings(self, soup):
         listings_dict = []
@@ -36,15 +50,24 @@ class deejay_scrape():
             try:
                 title_html = details_a.find("h3","title")
             except:
+<<<<<<< HEAD
                 continue
             title = title_html.find("a").text.replace('2x12"','').strip().replace('()',"")
+=======
+                pass
+            title = title_html.find("a").text
+>>>>>>> 2c970b446800dab232c6fa83f9309dd558edf030
             product_url = title_html.find("a")['href']
 
             details_b = product.find("div", "inner_b")
             try:
                 label_html = details_b.find("div","label")
             except:
+<<<<<<< HEAD
                 continue
+=======
+                pass
+>>>>>>> 2c970b446800dab232c6fa83f9309dd558edf030
 
             try:
                 label = label_html.findAll("b")[0].text
@@ -53,7 +76,11 @@ class deejay_scrape():
                 try:
                     label = label_html.findAll("em")[0].text
                 except:
+<<<<<<< HEAD
                     continue
+=======
+                    pass
+>>>>>>> 2c970b446800dab232c6fa83f9309dd558edf030
 
             details = {'title': title, 'label': label, 'url': product_url, 'product_id': product_id}
             listings_dict.append(details)
@@ -61,6 +88,7 @@ class deejay_scrape():
         self.listings_dict = listings_dict
 
     def check_db_for_match(self, listings_dict):
+<<<<<<< HEAD
         for record in listings_dict:
             print('Doing ' + record['title'] + ' on ' + record['label'])
 
@@ -93,10 +121,22 @@ class deejay_scrape():
 
     def process_all(self,base_url):
         self.get_page(base_url)
+=======
+        return listings_dict
+
+
+    def scrape_stock(self, listing_url):
+        return listing_url
+
+
+    def process_all(self):
+        self.get_page(self.base_url)
+>>>>>>> 2c970b446800dab232c6fa83f9309dd558edf030
         self.load_html_into_bs(self.page_got)
         self.scrape_listings(self.soup)
         self.check_db_for_match(self.listings_dict)
 
+<<<<<<< HEAD
     def check_stock(self,base_url):
         self.get_page(base_url)
         self.load_html_into_bs(self.page_got)
@@ -121,3 +161,15 @@ print(client.check_stock(base_url_scrape))
 
 
 
+=======
+    def check_stock(self):
+        self.get_page(self.base_url)
+        self.load_html_into_bs(self.page_got)
+        self.scrape_stock(self.soup)
+
+
+
+######scrape listings and store in DB
+client = deejay_scrape()
+print(client.process_all())
+>>>>>>> 2c970b446800dab232c6fa83f9309dd558edf030

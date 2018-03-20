@@ -560,10 +560,14 @@ INNER JOIN artists_user_has_recd auhr
 ON auhr.artist=release_artists.artists
 INNER JOIN releases_all releases 
 ON releases.id=release_artists.release_id
+<<<<<<< HEAD
 LEFT JOIN recommendations ON recommendations.user=auhr.user 
 AND releases.id=recommendations.release_id 
 WHERE recommendations.user IS NULL
 AND auhr.user=%s
+=======
+WHERE auhr.user=%s
+>>>>>>> 2c970b446800dab232c6fa83f9309dd558edf030
 AND release_artists.artists!='Various Artists'
 AND datediff(now(),date) <= %s
 UNION ALL

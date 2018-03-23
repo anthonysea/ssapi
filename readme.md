@@ -1,6 +1,12 @@
-###API for https://www.soundshelter.net
+# SSAPI (SoundShelterAPI)
 
-####email info@soundshelter.net for API key
+API for [SoundShelter](https://www.soundshelter.net)
+
+## Contact
+
+Email info@soundshelter.net for an  key
+
+## Examples
 
 __Get a list of Collections__
 
